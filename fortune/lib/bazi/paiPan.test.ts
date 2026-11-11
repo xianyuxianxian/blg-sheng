@@ -98,6 +98,38 @@ describe("paiPan 子时换日", () => {
     expect(late.siZhu.hour).toEqual(early.siZhu.hour);
   });
 
+  // oracle：晚子时换日后，年月柱的十神由手写查表（LunarUtil.SHI_SHEN["日干+他干"]）重算。
+  // 用「2020-01-02 日干甲 + 同一对年月干支」让库自己算一遍，反查手写查表的键序是否正确。
+  describe("晚子时换日后的年月十神（手写查表 vs 库自身）", () => {
+    const late = paiPan({ y: 2020, m: 1, d: 1, hourIndex: 0, hour: 23, minute: 30, gender: "m" });
+    // 2020-01-02 日干为甲，年柱己亥、月柱丙子与晚子时换日后的年/月干支完全相同
+    const next = paiPan({ y: 2020, m: 1, d: 2, hourIndex: 6, gender: "m" });
+
+    it("日干一致（甲）", () => {
+      expect(late.siZhu.day.gan).toBe("甲");
+      expect(next.siZhu.day.gan).toBe("甲");
+    });
+
+    it("年柱干支一致，故十神应一致", () => {
+      expect(late.siZhu.year.gan + late.siZhu.year.zhi).toBe(next.siZhu.year.gan + next.siZhu.year.zhi);
+      expect(late.siZhu.year.shiShenGan).toBe(next.siZhu.year.shiShenGan);
+      expect(late.siZhu.year.shiShenZhi).toEqual(next.siZhu.year.shiShenZhi);
+    });
+
+    it("月柱干支一致，故十神应一致", () => {
+      expect(late.siZhu.month.gan + late.siZhu.month.zhi).toBe(next.siZhu.month.gan + next.siZhu.month.zhi);
+      expect(late.siZhu.month.shiShenGan).toBe(next.siZhu.month.shiShenGan);
+      expect(late.siZhu.month.shiShenZhi).toEqual(next.siZhu.month.shiShenZhi);
+    });
+
+    it("十神具体值（甲日对己/丙/壬/癸/甲）", () => {
+      expect(late.siZhu.year.shiShenGan).toBe("正财"); // 甲（木）见 己（土）
+      expect(late.siZhu.year.shiShenZhi).toEqual(["偏印", "比肩"]); // 亥藏 壬、甲
+      expect(late.siZhu.month.shiShenGan).toBe("食神"); // 甲见 丙
+      expect(late.siZhu.month.shiShenZhi).toEqual(["正印"]); // 子藏 癸
+    });
+  });
+
   it("立春落在 23:00–24:00 之间时：晚子时只进日柱，年柱月柱走 23:xx 的节气状态", () => {
     // 1984 立春 = 1984-02-04 23:18:44
     const r = paiPan({ y: 1984, m: 2, d: 4, hourIndex: 0, hour: 23, minute: 5, gender: "m" });
@@ -172,5 +204,27 @@ describe("paiPan 输入校验", () => {
 
   it("非法日期抛错", () => {
     expect(() => paiPan({ y: 1990, m: 2, d: 30, hourIndex: 6, gender: "m" })).toThrow();
+  });
+});
+
+describe("paiPan note 口径陈述", () => {
+  it("始终声明北京时间平太阳时口径", () => {
+    const text = paiPan({ y: 1990, m: 6, d: 15, hourIndex: 6, gender: "m" }).note.join("\n");
+    expect(text).toContain("北京时间");
+    expect(text).toContain("真太阳时");
+  });
+
+  it("显式 00:xx 早子时：note 不谎称「按 00:30 取时」", () => {
+    const text = paiPan({ y: 2020, m: 1, d: 2, hourIndex: 0, hour: 0, minute: 45, gender: "m" })
+      .note.join("\n");
+    expect(text).toContain("00:45");
+    expect(text).not.toContain("未指定到分钟");
+    expect(text).not.toContain("按当日 00:30 取时");
+  });
+
+  it("默认子时（未传 hour）：note 说明按 00:30 取时并给出晚子时提示", () => {
+    const text = paiPan({ y: 2020, m: 1, d: 1, hourIndex: 0, gender: "m" }).note.join("\n");
+    expect(text).toContain("按当日 00:30 取时");
+    expect(text).toContain("23:00–24:00");
   });
 });

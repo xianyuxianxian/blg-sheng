@@ -132,19 +132,24 @@ function buildNote(args: {
   qiYun: QiYun;
 }): string[] {
   const note: string[] = [];
+  const clock = `${String(args.hour).padStart(2, "0")}:${String(args.minute).padStart(2, "0")}`;
+
+  note.push("时间口径：按北京时间（东经 120° 平太阳时）排盘，未做真太阳时/经度时差校正。");
 
   if (args.isLateZi) {
     note.push(
-      `晚子时换日：出生时刻 ${args.hour}:${String(args.minute).padStart(2, "0")} 属 23:00–01:00，` +
+      `晚子时换日：出生时刻 ${clock} 属 23:00–01:00，` +
         `日柱进一位取次日子时（${args.lateZiSolarYmd}）之日柱，年柱月柱不进位，时干按进位后的日干起。`,
     );
   } else if (args.hourIndex === 0) {
     note.push(
-      `早子时口径：未指定到分钟，子时按当日 00:30 取时，日柱用当日日柱；` +
-        `若出生于当日 23:00–24:00，请传 hour/minute 以按晚子时规则换日。`,
+      args.explicit
+        ? `早子时口径：出生时刻 ${clock} 属 00:00–01:00，日柱用当日日柱（不换日），时干按当日日干起。`
+        : `早子时口径：未指定到分钟，子时按当日 00:30 取时，日柱用当日日柱；` +
+          `若出生于当日 23:00–24:00，请传 hour/minute 以按晚子时规则换日。`,
     );
   } else if (args.explicit) {
-    note.push(`时柱按输入时刻 ${args.hour}:${String(args.minute).padStart(2, "0")} 取（${SHI_CHEN_NAMES[args.hourIndex]}时）。`);
+    note.push(`时柱按输入时刻 ${clock} 取（${SHI_CHEN_NAMES[args.hourIndex]}时）。`);
   }
 
   note.push("节气口径：年柱以立春、月柱以节令为界，按节气精确时刻切换。");
