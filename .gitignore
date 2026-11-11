@@ -1,0 +1,5 @@
+# 仓库根目录：只跟踪 fortune/ 与 docs/（设计文档），其余一律排除
+/*
+!fortune/
+!docs/
+!.gitignore
