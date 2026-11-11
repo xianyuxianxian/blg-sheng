@@ -17,13 +17,40 @@ describe("interpretWuXing 极端分布（某行 ≥4，偏枯）", () => {
     expect(out[0]).toContain("4");
   });
 
-  it("两行同时偏枯：各给一段，不重复", () => {
+  it("两行同时偏枯：各给一段，不重复，且先偏枯后缺失、按金木水火土排序", () => {
     const out = interpretWuXing(stat({ 金: 4, 木: 4, 水: 0, 火: 0, 土: 0 }));
     // 2 段偏枯（金、木）+ 3 段缺失（水、火、土）
     expect(out).toHaveLength(5);
     expect(new Set(out).size).toBe(5);
-    expect(out.join("\n")).toContain("金");
-    expect(out.join("\n")).toContain("木");
+
+    expect(out[0]).toContain("金");
+    expect(out[0]).toContain("偏枯");
+    expect(out[1]).toContain("木");
+    expect(out[1]).toContain("偏枯");
+
+    // 缺失段全部排在偏枯段之后，且内部按金木水火土固定顺序（水、火、土）
+    const missing = out.slice(2);
+    expect(missing.every((line) => line.includes("缺"))).toBe(true);
+    expect(missing[0]).toContain("水");
+    expect(missing[1]).toContain("火");
+    expect(missing[2]).toContain("土");
+  });
+
+  it("顺序是「先偏枯后缺失」，不受五行固定顺序影响", () => {
+    // 金缺失、木偏枯：若按五行顺序拼接，金会排在木之前；按文档应先木偏枯、后金缺失。
+    const out = interpretWuXing(stat({ 金: 0, 木: 4, 水: 2, 火: 2, 土: 0 }));
+    expect(out).toHaveLength(3);
+    expect(out[0]).toContain("木");
+    expect(out[0]).toContain("偏枯");
+    expect(out[1]).toContain("金");
+    expect(out[1]).toContain("缺");
+    expect(out[2]).toContain("土");
+    expect(out[2]).toContain("缺");
+
+    // 所有「偏枯」段都在第一个「缺」段之前
+    const firstMissing = out.findIndex((line) => line.includes("命局缺"));
+    const lastExcess = out.map((line) => line.includes("偏枯")).lastIndexOf(true);
+    expect(firstMissing).toBeGreaterThan(lastExcess);
   });
 
   it("每一行达到 4 都能落到自己的文案", () => {

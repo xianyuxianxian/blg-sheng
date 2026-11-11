@@ -64,11 +64,13 @@ export function BaziCalculator() {
     event.preventDefault();
 
     if (!Number.isInteger(year) || year < 1900 || year > 2100) {
+      setOutcome(null);
       setError("出生年需为 1900–2100 之间的整数（公历）。");
       return;
     }
     const minute = minuteText.trim() === "" ? DEFAULT_MINUTE : Number(minuteText);
     if (!Number.isInteger(minute) || minute < 0 || minute > 59) {
+      setOutcome(null);
       setError("分钟需为 0–59 的整数；留空按 30 分计。");
       return;
     }
