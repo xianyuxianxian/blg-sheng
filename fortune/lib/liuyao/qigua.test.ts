@@ -190,12 +190,69 @@ describe("qiGuaByTime：梅花易数时间起卦", () => {
     expect(r.bianGua?.name).toBe("师");
   });
 
-  it("23:00 后仍按当日农历日数取数（仅时辰取子）", () => {
+  it("22:30（当日，非晚子时）仍取当日农历日数", () => {
+    const r = qiGuaByTime(new Date(2026, 10, 11, 22, 30, 0));
+    expect(r.basis).toMatchObject({
+      lunarMonth: 10,
+      lunarDay: 3,
+      timeZhi: "亥",
+      timeZhiNum: 12,
+    });
+    // 年+月+日 = 20 → 4 震（上）；20 + 12 = 32 → 8 坤（下）；32 mod 6 = 2 二爻动
+    expect(r.basis).toMatchObject({ shangGuaNum: 4, xiaGuaNum: 8, movingNum: 2 });
+  });
+
+  it("23:00 后晚子时归次日：2026-11-11 23:30 按十月初四、子时起卦", () => {
     const r = qiGuaByTime(new Date(2026, 10, 11, 23, 30, 0));
-    expect(r.basis).toMatchObject({ lunarMonth: 10, lunarDay: 3, timeZhi: "子", timeZhiNum: 1 });
-    // 20 → 4 震（上）；20 + 1 = 21 → 5 巽（下）；21 mod 6 = 3 三爻动
-    expect(r.basis).toMatchObject({ shangGuaNum: 4, xiaGuaNum: 5, movingNum: 3 });
-    expect(r.benGua.name).toBe("恒");
+    // 次日 = 2026-11-12 农历十月初四；年支午 7
+    expect(r.basis).toMatchObject({
+      yearZhi: "午",
+      yearZhiNum: 7,
+      lunarMonth: 10,
+      lunarDay: 4,
+      timeZhi: "子",
+      timeZhiNum: 1,
+    });
+    // 7 + 10 + 4 = 21 → 21 mod 8 = 5 巽（上）
+    // 21 + 1 = 22 → 22 mod 8 = 6 坎（下）；22 mod 6 = 4 四爻动
+    expect(r.basis).toMatchObject({ shangGuaNum: 5, xiaGuaNum: 6, movingNum: 4 });
+    expect(r.benGua.name).toBe("涣");
+    expect(r.movingLines).toEqual([3]);
+    // 涣 四爻动 → 天水讼
+    expect(r.bianGua?.name).toBe("讼");
+  });
+
+  it("晚子时跨农历月末：2026-12-08 23:30 归次日冬月初一", () => {
+    const r = qiGuaByTime(new Date(2026, 11, 8, 23, 30, 0));
+    expect(r.basis).toMatchObject({
+      lunarMonth: 11,
+      lunarDay: 1,
+      timeZhi: "子",
+      timeZhiNum: 1,
+    });
+    // 7 + 11 + 1 = 19 → 19 mod 8 = 3 离（上）；19 + 1 = 20 → 4 震（下）；20 mod 6 = 2 二爻动
+    expect(r.basis).toMatchObject({ shangGuaNum: 3, xiaGuaNum: 4, movingNum: 2 });
+    expect(r.benGua.name).toBe("噬嗑");
+    expect(r.movingLines).toEqual([1]);
+    // 噬嗑 二爻动 → 火泽睽
+    expect(r.bianGua?.name).toBe("睽");
+  });
+
+  it("闰六月取本月数（2025-08-01 闰六月初八）", () => {
+    const r = qiGuaByTime(new Date(2025, 7, 1, 12, 0, 0));
+    // 巳年 6 + 闰六月 6 + 初八 8 = 20 → 4 震（上）；加午时 7 = 27 → 3 离（下）；27 mod 6 = 3 三爻动
+    expect(r.basis).toEqual({
+      yearZhi: "巳",
+      yearZhiNum: 6,
+      lunarMonth: 6,
+      lunarDay: 8,
+      timeZhi: "午",
+      timeZhiNum: 7,
+      shangGuaNum: 4,
+      xiaGuaNum: 3,
+      movingNum: 3,
+    });
+    expect(r.benGua.name).toBe("丰");
   });
 
   it("无效日期抛 RangeError", () => {

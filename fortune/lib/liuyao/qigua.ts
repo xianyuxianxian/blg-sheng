@@ -4,7 +4,8 @@
  * 纯计算层（无副作用、不取随机源）：
  * - 掷币：`qiGuaByCoin` 接收**注入**的掷币结果，便于测试与动画回放；
  *   真实随机在 Task 9 的 UI 层用 `lib/random.ts` 的 `randomInt` 组装后传入。
- * - 时间：`qiGuaByTime` 用传入 `Date` 的农历年支/月/日/时辰取数。
+ * - 时间：`qiGuaByTime` 用传入 `Date` 的农历年支/月/日/时辰取数；
+ *   23:00-23:59 为晚子时，归次日取农历日数（与八字页换日口径一致）。
  * - 变卦：翻转动爻（阳变阴、阴变阳）后重新取上下卦，再调 `zhuangGua` 装卦。
  *
  * 本模块禁止 import React / app / components。
@@ -25,6 +26,9 @@ const ZHI = [
 
 /** 先天卦数 → 经卦：乾1 兑2 离3 震4 巽5 坎6 艮7 坤8 */
 const GUA_BY_NUM: Trigram[] = ["乾", "兑", "离", "震", "巽", "坎", "艮", "坤"];
+
+/** 晚子时起点：23:00 起归次日（与八字页晚子时换日口径一致） */
+const LATE_ZI_HOUR = 23;
 
 /** 时间起卦的中间量：页面展示推算过程用 */
 export interface QiGuaTimeBasis {
@@ -105,7 +109,7 @@ const ZI_FACE = 3;
 const BEI_FACE = 2;
 
 /**
- * 一次掷币（三枚）的字面枚数 → 爻。
+ * 一次掷币（三枚）→ 爻，按「字」的枚数直索（下标 0-3）。
  *
  * 口径（Controller 裁决）：
  * - 3 字 = 老阴（6，动）
@@ -113,11 +117,11 @@ const BEI_FACE = 2;
  * - 1 字 2 背 = 少阴（8，静）
  * - 3 背 = 老阳（9，动）
  */
-const COIN_OUTCOMES: { yaoShu: number; yang: boolean; moving: boolean }[] = [
-  { yaoShu: 6, yang: false, moving: true }, // 3 字
-  { yaoShu: 7, yang: true, moving: false }, // 2 字
-  { yaoShu: 8, yang: false, moving: false }, // 1 字
-  { yaoShu: 9, yang: true, moving: true }, // 0 字（3 背）
+const BY_ZI_COUNT: { yaoShu: number; yang: boolean; moving: boolean }[] = [
+  { yaoShu: 9, yang: true, moving: true }, // 0 字（3 背）= 老阳
+  { yaoShu: 8, yang: false, moving: false }, // 1 字 2 背 = 少阴
+  { yaoShu: 7, yang: true, moving: false }, // 2 字 1 背 = 少阳
+  { yaoShu: 6, yang: false, moving: true }, // 3 字 = 老阴
 ];
 
 /**
@@ -146,7 +150,7 @@ export function qiGuaByCoin(tosses: number[][]): QiGuaResult {
       }
       if (face === ZI_FACE) ziCount += 1;
     }
-    const outcome = COIN_OUTCOMES[3 - ziCount];
+    const outcome = BY_ZI_COUNT[ziCount];
     if (!outcome) {
       // ziCount 只可能是 0-3，走不到这里
       throw new Error(`掷币结果无法解析：第 ${i + 1} 掷 ${ziCount} 字`);
@@ -183,7 +187,8 @@ function zhiNum(zhi: string): number {
  * - 动爻数 = (年支数 + 月数 + 日数 + 时辰数) mod 6，除尽取 6（1 = 初爻）
  * - 卦数 → 经卦：乾1 兑2 离3 震4 巽5 坎6 艮7 坤8（先天卦数）
  *
- * 时辰按子 1…亥 12；23:00 后仍按当日农历日数取数，仅时辰取子。
+ * 时辰按子 1…亥 12；**23:00-23:59 为晚子时，归次日**：日数取次日的农历日
+ * （月末自动进位到次月初一），时辰仍取子。与八字页的晚子时换日口径一致。
  *
  * @param date 起卦时刻（按运行环境本地时区解析）
  */
@@ -192,7 +197,9 @@ export function qiGuaByTime(date: Date): QiGuaResult {
     throw new RangeError("qiGuaByTime 需要有效的 Date");
   }
 
-  const lunar = Solar.fromDate(date).getLunar();
+  const solar = Solar.fromDate(date);
+  // 晚子时（23:00 起）归次日取农历日；nextDay 走公历日界，月末/年末进位由历法库处理
+  const lunar = (solar.getHour() >= LATE_ZI_HOUR ? solar.nextDay(1) : solar).getLunar();
   const yearZhi = lunar.getYearZhi();
   const yearZhiNum = zhiNum(yearZhi);
   // lunar-typescript 闰月返回负数（如 -6），梅花易数按本月数取
