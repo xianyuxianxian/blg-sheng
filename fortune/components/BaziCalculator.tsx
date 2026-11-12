@@ -272,7 +272,7 @@ export function BaziCalculator() {
           </div>
         ) : outcome ? (
           <div className="space-y-4">
-            <div className="rounded-[2px] border border-rule bg-surface-2 p-5 sm:p-7">
+            <div className="border border-rule-cinnabar bg-surface-2 p-5 sm:p-7">
               <div ref={resultRef} className="space-y-6">
                 <QuestionBanner question={outcome.question} />
                 <QuestionProvider value={outcome.question}>

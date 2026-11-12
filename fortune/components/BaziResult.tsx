@@ -41,10 +41,10 @@ const WU_XING_COLOR: Record<WuXing, string> = {
 const RING = { size: 200, center: 100, radius: 72, stroke: 15 };
 
 const PILLARS = [
-  { key: "year", label: "年柱" },
-  { key: "month", label: "月柱" },
-  { key: "day", label: "日柱" },
-  { key: "hour", label: "时柱" },
+  { key: "year", label: "年" },
+  { key: "month", label: "月" },
+  { key: "day", label: "日" },
+  { key: "hour", label: "时" },
 ] as const;
 
 function pad2(n: number): string {
@@ -61,7 +61,9 @@ function SectionTitle({ children, hint }: { children: ReactNode; hint?: string }
 }
 
 /**
- * 四柱排盘：每柱一张竖排卡，干支上下叠写、衬线加大；
+ * 四柱文书区：古籍朱丝栏界格——四根竖栏由 1px 朱砂界行分隔，无卡片。
+ * 干支按 `writing-mode: vertical-rl` 竖排大字（--display-xl），
+ * 十神/藏干/纳音放栏底横排（340px 四栏每栏约 70px，小字竖排会折行且难读）。
  * 出现时按 80ms 逐柱淡入（CSS animation-delay，reduced-motion 时由全局规则关掉）。
  */
 function SiZhuTable({ result, birth, gender }: BaziResultProps) {
@@ -87,45 +89,49 @@ function SiZhuTable({ result, birth, gender }: BaziResultProps) {
         </p>
       </div>
 
-      <ol className="grid grid-cols-4 gap-1.5 sm:gap-2.5">
+      <ol className="grid grid-cols-4 border-y border-rule-cinnabar bg-surface">
         {PILLARS.map((p, index) => {
           const pillar = siZhu[p.key];
           return (
             <li
               key={p.key}
-              className="anim-pillar relative rounded-[2px] border border-rule bg-surface px-1 py-3 text-center sm:px-2"
+              className="anim-pillar flex flex-col items-center border-l border-rule-cinnabar px-0.5 pb-3 pt-3 first:border-l-0 sm:px-1.5"
               style={{ animationDelay: `${index * 80}ms` }}
             >
-              <div className="text-[10px] tracking-[0.2em] text-fg-muted">{p.label}</div>
+              {/* 柱顶小字「年/月/日/时」；读屏补全为「年柱」 */}
+              <div className="text-[10px] tracking-[0.2em] text-fg-muted">
+                <span aria-hidden>{p.label}</span>
+                <span className="sr-only">{p.label}柱</span>
+              </div>
               {p.key === "day" ? (
-                <div className="mx-auto mt-1 w-fit rounded-[1px] bg-accent px-1 py-[1px] text-[9px] leading-4 tracking-[0.1em] text-on-accent">
+                <div className="mt-1 rounded-[1px] bg-accent px-1 py-[1px] text-[9px] leading-4 tracking-[0.1em] text-on-accent">
                   日主
                 </div>
               ) : (
                 <div aria-hidden className="mt-1 h-[18px]" />
               )}
 
-              {/* 干支竖排：天干在上、地支在下，衬线加大 */}
+              {/* 干支竖排：天干在上、地支在下，思源宋 600 大字 */}
               <div
-                className="mt-2 font-serif text-[30px] leading-[1.08] sm:text-[34px]"
-                style={{ color: WU_XING_COLOR[wuXingOfGan(pillar.gan)] }}
+                className="vertical mt-3 font-serif font-semibold leading-none"
+                style={{ fontSize: "var(--display-xl)" }}
               >
-                {pillar.gan}
-              </div>
-              <div className="text-[10px] leading-tight text-fg-muted">
-                {pillar.shiShenGan}
-              </div>
-              <div
-                className="mt-1.5 font-serif text-[30px] leading-[1.08] sm:text-[34px]"
-                style={{ color: WU_XING_COLOR[wuXingOfZhi(pillar.zhi)] }}
-              >
-                {pillar.zhi}
-              </div>
-              <div className="text-[10px] leading-tight text-fg-muted">
-                {pillar.shiShenZhi.join("·")}
+                <span style={{ color: WU_XING_COLOR[wuXingOfGan(pillar.gan)] }}>
+                  {pillar.gan}
+                </span>
+                <span style={{ color: WU_XING_COLOR[wuXingOfZhi(pillar.zhi)] }}>
+                  {pillar.zhi}
+                </span>
               </div>
 
-              <div className="mt-2 border-t border-rule-soft pt-1.5">
+              {/* 十神预留固定行高：各柱十神行数不同时，栏底藏干界行仍能对齐
+                  （窄视口下「正官·劫财·正印」会折成两行，故 ≤sm 预留三行） */}
+              <div className="mt-2 flex min-h-[2.6em] flex-col text-center text-[10px] leading-tight text-fg-muted max-sm:min-h-[3.9em]">
+                <div>{pillar.shiShenGan}</div>
+                <div>{pillar.shiShenZhi.join("·")}</div>
+              </div>
+
+              <div className="mt-2 w-full border-t border-rule-ink pt-1.5">
                 <div className="text-[9px] tracking-[0.1em] text-fg-faint">藏干</div>
                 <ul className="mt-0.5 space-y-0.5">
                   {pillar.hideGan.map((gan, i) => (
@@ -143,9 +149,7 @@ function SiZhuTable({ result, birth, gender }: BaziResultProps) {
                     </li>
                   ))}
                 </ul>
-                <div className="mt-1.5 text-[10px] leading-tight text-fg-faint">
-                  {pillar.naYin}
-                </div>
+                <div className="mt-1.5 text-[10px] leading-tight text-fg-faint">{pillar.naYin}</div>
               </div>
             </li>
           );
@@ -182,7 +186,8 @@ function WuXingChart({ result }: { result: PaiPanResult }) {
       </SectionTitle>
 
       <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-8">
-        <div className="relative shrink-0">
+        {/* 墨色圆环外裹乌丝栏窄框：环本身已验收，不动几何与配色 */}
+        <div className="relative shrink-0 border border-rule-ink p-2.5">
           <svg
             viewBox={`0 0 ${RING.size} ${RING.size}`}
             className="h-[9.5rem] w-[9.5rem] font-serif"
@@ -315,9 +320,12 @@ function DaYunAxis({
       </p>
 
       <div ref={trackRef} className="relative">
-        {/* 卷轴轴头：纯 CSS 伪装饰，不用图片；分享图里隐去（换行后位置没有意义） */}
-        <span aria-hidden data-share-hide className="scroll-head left-0" />
-        <span aria-hidden data-share-hide className="scroll-head right-0" />
+        {/* 轴头鱼尾：纯 CSS 三角对顶，置于时间轴之上（滚动后仍不被牌位遮住）；
+            纯装饰，分享图里隐去 */}
+        <div aria-hidden data-share-hide className="mb-1.5 flex items-center justify-between">
+          <span className="fish-tail" />
+          <span className="fish-tail" />
+        </div>
         <ol className="flex gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:thin]">
           {result.daYun.map((step: DaYunStep) => {
             const active =
@@ -428,7 +436,7 @@ function Notes({ note }: { note: string[] }) {
 /** 八字结果面板：纯展示，计算与输入在 BaziCalculator 中完成。 */
 export function BaziResult(props: BaziResultProps) {
   return (
-    <div className="space-y-10 divide-y divide-rule [&>section]:pt-8 [&>section:first-child]:pt-0">
+    <div className="space-y-10 divide-y divide-rule-ink [&>section]:pt-8 [&>section:first-child]:pt-0">
       <SiZhuTable {...props} />
       <WuXingChart result={props.result} />
       <DaYunAxis result={props.result} birth={props.birth} />
