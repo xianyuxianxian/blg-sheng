@@ -285,12 +285,19 @@ function DaYunAxis({
   const trackRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const active = trackRef.current?.querySelector<HTMLElement>('[data-dayun-active="true"]');
-    if (!active) return;
+    const track = trackRef.current;
+    if (!track) return;
+    const list = track.querySelector<HTMLOListElement>("ol");
+    const active = track.querySelector<HTMLElement>('[data-dayun-active="true"]');
+    if (!list || !active) return;
+    // 只滚这条横向时间轴：scrollIntoView 会连 window 一起滚，把四柱/五行滚出视野。
+    const listRect = list.getBoundingClientRect();
+    const activeRect = active.getBoundingClientRect();
+    const delta =
+      activeRect.left + activeRect.width / 2 - (listRect.left + listRect.width / 2);
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    active.scrollIntoView({
-      inline: "center",
-      block: "nearest",
+    list.scrollTo({
+      left: list.scrollLeft + delta,
       behavior: reduced ? "auto" : "smooth",
     });
   }, []);
@@ -340,7 +347,7 @@ function DaYunAxis({
                   {step.startAge}–{step.endAge} 岁
                 </div>
                 {/* 大运年份区间保留：裁决是「大运可读性优先」，分享图只隐出生年份 */}
-                <div className="text-[9px] leading-tight text-fg-faint">
+                <div className="text-[9px] leading-tight text-fg-muted">
                   {step.startYear}–{step.endYear}
                 </div>
               </li>

@@ -21,7 +21,11 @@ const SANS_STACK =
 /** 标题/干支用衬线系统字体栈。 */
 const SERIF_STACK = 'ui-serif, Georgia, "Songti SC", "SimSun", serif';
 
-/** 分享图色板：与 app/globals.css 的 tokens 同值，但截图不用 CSS 变量（克隆节点可能脱离皮肤容器）。 */
+/**
+ * 分享图色板：两套字面量只兜「卡片外框」（底色、页眉、页脚这类由代码新建的节点）。
+ * 克隆进来的结果内容仍靠 CSS 变量上色，所以深色卡片把 `skinClass` 挂到克隆容器上，
+ * 让 `var(--fg)` 等在离屏容器里继续解析成深底墨金；两边取值与 globals.css 同步。
+ */
 type Palette = {
   /** 卡片底色 */
   bg: string;

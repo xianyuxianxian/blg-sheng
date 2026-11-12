@@ -98,10 +98,6 @@ export function TopicPicker({
           className="field"
         />
       </label>
-
-      {required && !topic ? (
-        <p className="mt-2 text-[11px] leading-5 text-accent">先选所问之事，再掷币起卦。</p>
-      ) : null}
     </section>
   );
 }

@@ -125,9 +125,7 @@ export function LiuyaoHexagram({ zhuang, title, variant }: LiuyaoHexagramProps) 
                 <LineGlyph yang={yang} moving={moving} />
                 <span className="text-center font-serif text-[12px] leading-none text-accent">
                   {variant === "ben" && moving ? (
-                    <span className={variant === "ben" ? "anim-pulse inline-block" : undefined}>
-                      {yang ? "○" : "×"}
-                    </span>
+                    <span className="anim-pulse inline-block">{yang ? "○" : "×"}</span>
                   ) : (
                     ""
                   )}

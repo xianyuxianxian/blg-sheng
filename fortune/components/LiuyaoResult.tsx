@@ -171,7 +171,7 @@ export function LiuyaoResult({ result, quZhan, castAt }: LiuyaoResultProps) {
 
         <p className="rounded-[2px] border-l-2 border-gold bg-surface-3 px-3 py-2 text-[12px] leading-6 text-fg-soft">
           {quZhan.rule}
-          <span className="mt-1 block text-[10px] leading-4 text-fg-faint">
+          <span className="mt-1 block text-[10px] leading-4 text-fg-muted">
             主 = 主占之辞，辅 = 兼参之辞，贞 = 本卦，悔 = 变卦。
           </span>
         </p>

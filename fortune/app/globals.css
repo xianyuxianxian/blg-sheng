@@ -27,12 +27,12 @@
   --paper-tint: #f3ecdd;
   --rule-warm-soft: #eee4d2;
 
-  /* 五行专用色（宣纸底色上可读的克制配色，逐盘固定语义） */
-  --wu-jin: #a07a33;
+  /* 五行专用色（宣纸底色上可读的克制配色，逐盘固定语义；全部 ≥4.5:1 于 paper 与 surface-3） */
+  --wu-jin: #8a6420;
   --wu-mu: #4d6f47;
   --wu-shui: #37606f;
   --wu-huo: var(--cinnabar);
-  --wu-tu: #8a6a44;
+  --wu-tu: #85643f;
 
   /* ——— 语义层：默认皮肤（首页 / about） ——— */
   --surface: var(--paper);
@@ -59,45 +59,8 @@
    ----------------------------------------------------------------------------
    统一底座 + 各自气质：八字＝命理文书、六爻＝铜钱蓍草、塔罗＝神秘学西风（唯一深色页）。
    ============================================================================ */
-.skin-bazi {
-  --surface: var(--paper);
-  --surface-2: var(--paper-raised);
-  --surface-3: var(--paper-tint);
-  --fg: var(--ink);
-  --fg-soft: #3f382d;
-  --fg-muted: var(--ink-soft);
-  --fg-faint: var(--ink-faint);
-  --rule: var(--border-warm);
-  --rule-soft: var(--rule-warm-soft);
-  --accent: var(--cinnabar);
-  --accent-soft: var(--cinnabar-soft);
-  --on-accent: #fbf6ec;
-  --cta: var(--cinnabar);
-  --cta-hover: var(--cinnabar-strong);
-  --on-cta: #fbf6ec;
-  --gold: var(--coin-gold);
-  --focus-ring: var(--gold-accent);
-}
-
-.skin-liuyao {
-  --surface: var(--paper);
-  --surface-2: var(--paper-raised);
-  --surface-3: var(--paper-tint);
-  --fg: var(--ink);
-  --fg-soft: #3f382d;
-  --fg-muted: var(--ink-soft);
-  --fg-faint: var(--ink-faint);
-  --rule: var(--border-warm);
-  --rule-soft: var(--rule-warm-soft);
-  --accent: var(--cinnabar);
-  --accent-soft: var(--cinnabar-soft);
-  --on-accent: #fbf6ec;
-  --cta: var(--cinnabar);
-  --cta-hover: var(--cinnabar-strong);
-  --on-cta: #fbf6ec;
-  --gold: var(--coin-gold);
-  --focus-ring: var(--gold-accent);
-}
+/* 八字 / 六爻与默认皮肤同值：直接用 :root 的语义层，不再重复声明。
+   页面根元素仍挂 .skin-bazi / .skin-liuyao 作为皮肤钩子（后续差异化只在这里加）。 */
 
 /* 塔罗：唯一深色页。正文 10.45:1、次要 7.58:1、CTA 底色 4.57:1（黑底金字）。 */
 .skin-tarot {
@@ -115,7 +78,7 @@
   --accent-soft: rgba(217, 164, 65, 0.14);
   --on-accent: #1c1917;
   --cta: var(--gold-accent);
-  --cta-hover: #b8730a;
+  --cta-hover: #96600a;
   --on-cta: #faf6ee;
   --gold: var(--gold-text);
   --focus-ring: var(--gold-text);

@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
 import { EXTRA_MAX, TOPICS } from "@/lib/ai/schema";
 import type { BaziData, LiuyaoData, TarotData, Topic } from "@/lib/ai/schema";
 import { useQuestion } from "@/components/QuestionContext";
+import { appendStripped } from "@/components/stream-text";
 
 export type AiInterpretType = "bazi" | "liuyao" | "tarot";
 
@@ -84,17 +85,6 @@ function parseEvent(rawEvent: string): ParsedEvent | null {
 
 function isAbortError(err: unknown): boolean {
   return (err as { name?: unknown } | null | undefined)?.name === "AbortError";
-}
-
-/**
- * 模型偶尔仍会吐 Markdown（**加粗**、# 标题、行内代码）。
- * 这里不做完整 Markdown 渲染，只去掉标记字符，保持纯文本段落。
- */
-function plainText(text: string): string {
-  return text
-    .replace(/\*\*/g, "")
-    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
-    .replace(/`{1,3}/g, "");
 }
 
 /** 页头装饰：八字＝朱砂「解」印；六爻＝铜钱；塔罗＝星芒（60s 一圈）。 */
@@ -168,8 +158,11 @@ function AiInterpretPanel({
   const [extra, setExtra] = useState(initialExtra);
   const [phase, setPhase] = useState<Phase>("idle");
   const [answer, setAnswer] = useState("");
-  /** 逐 delta 的文本片段：每个片段单独播 fade-in，实现「逐段浮现」。 */
-  const [chunks, setChunks] = useState<string[]>([]);
+  /**
+   * 已剥 Markdown 的分段：每段独立播 fade-in。
+   * 剥离在「累计原文」上做（见 stream-text.ts），delta 切在 `**`/` 中间也不会漏裸标记。
+   */
+  const [segments, setSegments] = useState<string[]>([]);
   const [errorText, setErrorText] = useState<string | null>(null);
   /** 服务端未配置（503）：按钮置灰，避免反复点同一个必然失败的请求。 */
   const [notConfigured, setNotConfigured] = useState(false);
@@ -200,7 +193,7 @@ function AiInterpretPanel({
     stoppedRef.current = false;
 
     setAnswer("");
-    setChunks([]);
+    setSegments([]);
     setErrorText(null);
     setPhase("thinking");
 
@@ -233,7 +226,6 @@ function AiInterpretPanel({
       let buffer = "";
       let acc = "";
       let sawDone = false;
-      const received: string[] = [];
 
       while (!sawDone) {
         const { value, done } = await reader.read();
@@ -255,9 +247,9 @@ function AiInterpretPanel({
             break;
           }
           acc += event.text;
-          received.push(event.text);
           setAnswer(acc);
-          setChunks([...received]);
+          // 在累计原文上剥 Markdown，再取相对上一段的增量：跨 delta 的 ** / ` 也不漏
+          setSegments((prev) => appendStripped(prev, acc));
           // 首字到达才离开「思考中」
           setPhase("streaming");
         }
@@ -413,9 +405,9 @@ function AiInterpretPanel({
 
         {hasAnswer ? (
           <div className="whitespace-pre-wrap break-words text-sm leading-7 text-fg-soft">
-            {chunks.map((chunk, index) => (
+            {segments.map((segment, index) => (
               <span key={index} className="anim-chunk inline">
-                {plainText(chunk)}
+                {segment}
               </span>
             ))}
             {phase === "streaming" ? (

@@ -216,6 +216,7 @@ export function TarotSpread() {
   function handleShuffle() {
     setDrawn([]);
     setRevealed(0);
+    setQuestion(null);
     setPhase("shuffling");
   }
 

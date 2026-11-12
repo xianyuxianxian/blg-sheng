@@ -164,7 +164,7 @@ function CoinBoard({ tosses, yaoShu }: { tosses: Toss[]; yaoShu?: number[] }) {
             >
               <span className="text-[10px] leading-4 text-fg-muted">
                 {YAO_LABELS[index]}
-                <span className="ml-1 text-fg-faint">第 {index + 1} 掷</span>
+                <span className="ml-1">第 {index + 1} 掷</span>
               </span>
 
               <span className="flex items-center gap-1" style={{ perspective: "300px" }}>
@@ -193,7 +193,7 @@ function CoinBoard({ tosses, yaoShu }: { tosses: Toss[]; yaoShu?: number[] }) {
                 {toss ? <YaoLine yang={isYangToss(toss)} animate={isLatest} /> : null}
               </span>
 
-              <span className="text-right text-[11px] leading-4 text-fg-faint">
+              <span className="text-right text-[11px] leading-4 text-fg-muted">
                 {toss ? (
                   name !== undefined ? (
                     <span className="font-serif text-accent">
@@ -204,7 +204,7 @@ function CoinBoard({ tosses, yaoShu }: { tosses: Toss[]; yaoShu?: number[] }) {
                     <span>已成爻</span>
                   )
                 ) : (
-                  <span className="text-fg-faint">待掷</span>
+                  <span>待掷</span>
                 )}
               </span>
             </div>
