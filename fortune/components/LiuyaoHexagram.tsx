@@ -65,7 +65,7 @@ export function LiuyaoHexagram({ zhuang, title, variant }: LiuyaoHexagramProps) 
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-rule-cinnabar pb-2">
         <h3 className="flex items-center gap-2 font-serif text-[14px] tracking-[0.16em] text-fg">
           {/* 卦符是装饰图形，卦名文本已承担语义 */}
-          <span aria-hidden className="text-[22px] leading-none text-accent">
+          <span aria-hidden className="hexagram-glyph text-[22px] leading-none text-accent">
             {hexagramSymbol(zhuang.shangGua, zhuang.xiaGua)}
           </span>
           <span>
@@ -114,7 +114,7 @@ export function LiuyaoHexagram({ zhuang, title, variant }: LiuyaoHexagramProps) 
               <span className="sr-only">{summary}。</span>
               <div
                 aria-hidden
-                className="grid grid-cols-[3.3rem_2.9rem_minmax(0,1fr)_1.1rem_1.7rem] items-center"
+                className="grid grid-cols-[3.3rem_2.9rem_minmax(0,1fr)_1.1rem_1.7rem] items-center sm:grid-cols-[minmax(0,3fr)_minmax(0,2.6fr)_minmax(0,5fr)_minmax(0,1fr)_minmax(0,2fr)]"
               >
                 <span className="flex items-center gap-1 py-[9px] font-serif text-[12px] text-fg">
                   {yao.liuQin}

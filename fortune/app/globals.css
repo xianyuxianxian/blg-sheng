@@ -181,6 +181,11 @@ body {
     text-orientation: upright;
   }
 
+  /* 卦符（U+4DC0–U+4DFF）：优先符号字体栈，避免落到缺字形的衬线体上显示豆腐块 */
+  .hexagram-glyph {
+    font-family: "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", var(--font-serif);
+  }
+
   /* 版心鱼尾：两枚 CSS 三角对顶，不引图片资源；纯装饰，aria-hidden。 */
   .fish-tail {
     position: relative;

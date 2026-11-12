@@ -128,7 +128,15 @@ function SiZhuTable({ result, birth, gender }: BaziResultProps) {
                   （窄视口下「正官·劫财·正印」会折成两行，故 ≤sm 预留三行） */}
               <div className="mt-2 flex min-h-[2.6em] flex-col text-center text-[10px] leading-tight text-fg-muted max-sm:min-h-[3.9em]">
                 <div>{pillar.shiShenGan}</div>
-                <div>{pillar.shiShenZhi.join("·")}</div>
+                {/* 分隔符并入前一段：换行时不会出现行首「·」（「劫财·」+「正印」） */}
+                <div>
+                  {pillar.shiShenZhi.map((shiShen, i) => (
+                    <span key={`${shiShen}-${i}`} className="whitespace-nowrap">
+                      {shiShen}
+                      {i < pillar.shiShenZhi.length - 1 ? "·" : ""}
+                    </span>
+                  ))}
+                </div>
               </div>
 
               <div className="mt-2 w-full border-t border-rule-ink pt-1.5">

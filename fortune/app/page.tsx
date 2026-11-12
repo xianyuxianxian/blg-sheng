@@ -79,7 +79,8 @@ export default function Home() {
                 <li key={entry.href} className="flex">
                   <Link
                     href={entry.href}
-                    className="tap group relative flex aspect-[4/5] w-full flex-col justify-between overflow-hidden border border-rule bg-surface-2 p-5 transition-[transform,border-color,box-shadow] duration-150 hover:-translate-y-1 hover:border-accent hover:shadow-[0_14px_26px_-22px_var(--ink)] sm:aspect-auto sm:min-h-[23rem] sm:p-4"
+                    aria-label={entry.title}
+                    className="tap group relative flex min-h-[22rem] w-full flex-col justify-between border border-rule bg-surface-2 p-5 transition-[transform,border-color,box-shadow] duration-150 hover:-translate-y-1 hover:border-accent hover:shadow-[0_14px_26px_-22px_var(--ink)] sm:min-h-[23rem] sm:p-4"
                   >
                     {/* 书签牌的朱砂系带 */}
                     <span aria-hidden className="absolute inset-x-0 top-0 h-[3px] bg-accent" />

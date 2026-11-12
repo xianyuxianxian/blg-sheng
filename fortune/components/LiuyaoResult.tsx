@@ -118,14 +118,20 @@ export function LiuyaoResult({ result, quZhan, castAt }: LiuyaoResultProps) {
             {result.method === "time" ? "梅花易数" : "三钱六掷"}
           </p>
           <p className="mt-1.5 flex flex-wrap items-center justify-center gap-x-2 font-serif text-[30px] leading-tight tracking-[0.16em] text-fg sm:text-[34px]">
-            <span aria-hidden className="text-[40px] leading-none text-accent sm:text-[44px]">
+            <span
+              aria-hidden
+              className="hexagram-glyph text-[40px] leading-none text-accent sm:text-[44px]"
+            >
               {hexagramSymbol(result.benGua.shangGua, result.benGua.xiaGua)}
             </span>
             <span>{result.benGua.name}</span>
             {result.bianGua ? (
               <>
                 <span className="mx-1 text-[0.55em] tracking-normal text-fg-faint">之</span>
-                <span aria-hidden className="text-[40px] leading-none text-accent sm:text-[44px]">
+                <span
+                  aria-hidden
+                  className="hexagram-glyph text-[40px] leading-none text-accent sm:text-[44px]"
+                >
                   {hexagramSymbol(result.bianGua.shangGua, result.bianGua.xiaGua)}
                 </span>
                 <span className="text-fg-faint">{result.bianGua.name}</span>

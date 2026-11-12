@@ -1,12 +1,34 @@
 import { describe, expect, it } from "vitest";
+import guaDoc from "../data/64gua.json";
 import { hexagramNumber, hexagramSymbol } from "./hexagram-symbol";
 import type { Trigram } from "@/lib/liuyao/types";
+
+/**
+ * 数据层的 64 卦表：`gua64` 数组下标 0 即文王卦序第 1 卦（乾），依次到未济。
+ * 用相对路径引入而不是 `@/`：vitest 没有配 alias，`@/` 只在 tsc/Next 里成立。
+ */
+const GUA64 = guaDoc.gua64 as {
+  name: string;
+  shangGua: Trigram;
+  xiaGua: Trigram;
+}[];
 
 /**
  * 校验口径：Unicode「Yijing Hexagram Symbols」区块按文王卦序排列，
  * U+4DC0 = 第 1 卦乾䷀，U+4DFF = 第 64 卦未济䷿。
  */
 describe("hexagramSymbol：上下经卦 → 卦符", () => {
+  it("与 data/64gua.json 的文王序逐条锁死（64 条全量）", () => {
+    expect(GUA64).toHaveLength(64);
+    GUA64.forEach((gua, index) => {
+      const label = `第 ${index + 1} 卦 ${gua.name}（${gua.shangGua}上${gua.xiaGua}下）`;
+      expect(hexagramNumber(gua.shangGua, gua.xiaGua), label).toBe(index + 1);
+      expect(hexagramSymbol(gua.shangGua, gua.xiaGua), label).toBe(
+        String.fromCodePoint(0x4dc0 + index),
+      );
+    });
+  });
+
   it("六十四卦之首尾两卦取到纯卦符号（乾䷀ / 坤䷁）", () => {
     expect(hexagramSymbol("乾", "乾")).toBe("䷀");
     expect(hexagramSymbol("坤", "坤")).toBe("䷁");
