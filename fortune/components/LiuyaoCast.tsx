@@ -10,14 +10,15 @@
 
 import { useState } from "react";
 import { LiuyaoResult } from "@/components/LiuyaoResult";
+import { BEI_FACE, ZI_FACE, type CoinFace } from "@/lib/liuyao/coins";
 import { randomInt } from "@/lib/random";
 import type { QiGuaResult } from "@/lib/liuyao/qigua";
 import type { QuZhanResult } from "@/lib/liuyao/bianZhan";
 
 type Method = "coin" | "time";
 
-/** 一次掷币：3 枚铜钱的面值（与 `lib/liuyao/qigua.ts` 一致：3 = 字、2 = 背） */
-type Toss = number[];
+/** 一次掷币：3 枚铜钱的面值（编码见 `lib/liuyao/coins`：3 = 字、2 = 背） */
+type Toss = CoinFace[];
 
 type Outcome = {
   result: QiGuaResult;
@@ -25,10 +26,6 @@ type Outcome = {
   /** 起卦时刻（本地时间，已格式化） */
   castAt: string;
 };
-
-/** 铜钱面值，口径见 `lib/liuyao/qigua.ts` */
-const ZI_FACE = 3;
-const BEI_FACE = 2;
 
 /** 爻位名（自下而上） */
 const YAO_LABELS = ["初爻", "二爻", "三爻", "四爻", "五爻", "上爻"] as const;

@@ -12,6 +12,7 @@
  */
 
 import { Solar } from "lunar-typescript";
+import { BEI_FACE, ZI_FACE } from "./coins";
 import { linesOfTrigram, trigramOfLines } from "./guaShape";
 import { zhuangGua } from "./najia";
 import type { Trigram, ZhuangResult } from "./types";
@@ -103,13 +104,10 @@ function buildResult(
   return { method, lines: [...lines], yaoShu: [...yaoShu], movingLines: moving, benGua, bianGua, basis };
 }
 
-/** 铜钱字面（按 Controller 裁决编码） */
-const ZI_FACE = 3;
-/** 铜钱背面 */
-const BEI_FACE = 2;
-
 /**
  * 一次掷币（三枚）→ 爻，按「字」的枚数直索（下标 0-3）。
+ *
+ * 面值编码见 `./coins`（3 = 字、2 = 背）。
  *
  * 口径（Controller 裁决）：
  * - 3 字 = 老阴（6，动）
