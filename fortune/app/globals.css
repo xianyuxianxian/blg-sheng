@@ -130,10 +130,10 @@
   --color-gold: var(--gold);
 
   --font-sans:
-    var(--font-noto-sans-tc), ui-sans-serif, system-ui, "PingFang SC", "Hiragino Sans GB",
+    "Noto Sans TC Variable", ui-sans-serif, system-ui, "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", sans-serif;
   --font-serif:
-    var(--font-noto-serif-tc), ui-serif, Georgia, "Songti SC", "SimSun", serif;
+    "Noto Serif TC Variable", ui-serif, Georgia, "Songti SC", "SimSun", serif;
 }
 
 /* ============================================================================
