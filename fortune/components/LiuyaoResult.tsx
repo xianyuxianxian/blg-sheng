@@ -5,8 +5,10 @@
  */
 
 import { LiuyaoHexagram } from "@/components/LiuyaoHexagram";
+import { AiInterpret } from "@/components/AiInterpret";
 import type { QiGuaResult } from "@/lib/liuyao/qigua";
 import type { QuZhanItem, QuZhanResult } from "@/lib/liuyao/bianZhan";
+import type { LiuyaoData } from "@/lib/ai/schema";
 
 export type LiuyaoResultProps = {
   result: QiGuaResult;
@@ -73,6 +75,23 @@ function TimeBasis({ result }: { result: QiGuaResult }) {
       </p>
     </section>
   );
+}
+
+/**
+ * AI 解读入参映射：卦名、动爻索引与六爻装卦结果。
+ * 拍平装卦结构（gan + diZhi → 两字干支、isShi/isYing → 世/应），不取起卦时刻等时间信息。
+ */
+function buildAiData(result: QiGuaResult): LiuyaoData {
+  return {
+    benGua: result.benGua.name,
+    bianGua: result.bianGua ? result.bianGua.name : "无变卦",
+    movingLines: [...result.movingLines],
+    lines: result.benGua.yao.map((yao) => ({
+      ganzhi: `${yao.gan}${yao.diZhi}`,
+      liuQin: yao.liuQin,
+      shiYing: yao.isShi ? "世" : yao.isYing ? "应" : "",
+    })),
+  };
 }
 
 /** 主结果：卦象与取辞 */
@@ -147,6 +166,8 @@ export function LiuyaoResult({ result, quZhan, castAt }: LiuyaoResultProps) {
           仅呈现卦爻辞原文与传统标排，不做吉凶断语。
         </p>
       </section>
+
+      <AiInterpret type="liuyao" buildData={() => buildAiData(result)} />
     </div>
   );
 }

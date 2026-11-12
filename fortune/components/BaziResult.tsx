@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
-import type { DaYunStep, PaiPanResult, WuXing } from "@/lib/bazi/types";
+import type { DaYunStep, PaiPanResult, SiZhu, WuXing } from "@/lib/bazi/types";
 import { WU_XING_ORDER } from "@/lib/bazi/types";
 import { wuXingOfGan, wuXingOfZhi } from "@/lib/bazi/wuXing";
 import { interpretWuXing, WU_XING_EXCESS_THRESHOLD } from "@/lib/bazi/interpret";
+import { AiInterpret } from "@/components/AiInterpret";
+import type { BaziData } from "@/lib/ai/schema";
 import {
   WU_XING_EMPTY,
   WU_XING_EMPTY_HINT,
@@ -333,6 +335,22 @@ function Interpretation({ result }: { result: PaiPanResult }) {
   );
 }
 
+/** AI 解读入参映射：只取干支字符串、五行计数与大运干支，不含任何生辰数字。 */
+function buildAiData(result: PaiPanResult): BaziData {
+  const pillar = (siZhu: SiZhu) => `${siZhu.gan}${siZhu.zhi}`;
+  return {
+    siZhu: {
+      year: pillar(result.siZhu.year),
+      month: pillar(result.siZhu.month),
+      day: pillar(result.siZhu.day),
+      hour: pillar(result.siZhu.hour),
+    },
+    wuXing: { ...result.wuXing },
+    // schema 上限 12：当前固定 10 步，截断只为挡住将来加长时整单 400
+    daYun: result.daYun.slice(0, 12).map((step) => `${step.gan}${step.zhi}`),
+  };
+}
+
 /** 排盘口径：原样展示计算层给出的 note。 */
 function Notes({ note }: { note: string[] }) {
   return (
@@ -366,6 +384,7 @@ export function BaziResult(props: BaziResultProps) {
       <WuXingChart result={props.result} />
       <DaYunAxis result={props.result} birth={props.birth} />
       <Interpretation result={props.result} />
+      <AiInterpret type="bazi" buildData={() => buildAiData(props.result)} />
       <Notes note={props.result.note} />
     </div>
   );

@@ -27,7 +27,7 @@ export const PRODUCT_INTRO: readonly string[] = [
 export const PRIVACY_POINTS: readonly CopyPoint[] = [
   {
     title: "所有排盘在你的浏览器本地完成",
-    body: "四柱推算、装卦、洗牌与抽牌，全部由你浏览器里的 JavaScript 执行。生辰、问题与抽牌结果不会作为请求数据发送到任何服务器。",
+    body: "四柱推算、装卦、洗牌与抽牌，全部由你浏览器里的 JavaScript 执行。生辰与所问之事不会作为请求数据发送到任何服务器；唯一的例外是你主动点击「AI 解读」——此时只发送排盘结果（干支、卦象、牌面，不含生辰），见本节末尾说明。",
   },
   {
     title: "不收集任何数据",

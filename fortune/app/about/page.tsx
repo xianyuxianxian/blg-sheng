@@ -91,6 +91,9 @@ export default function AboutPage() {
 
           <Section index="一" title="隐私说明">
             <PointList points={PRIVACY_POINTS} />
+            <p className="rounded-[2px] border-l-2 border-[#a63a2c] bg-[#f3ecdd] px-3 py-2 text-[13px] leading-7 text-[#5b5344]">
+              排盘结果（不含你的生辰）会在你点击 AI 解读时发送给模型服务，用于生成解读。
+            </p>
           </Section>
 
           <Section index="二" title="排盘口径">

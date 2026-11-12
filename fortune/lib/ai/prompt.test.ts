@@ -60,6 +60,39 @@ describe("buildPrompt - 系统提示护栏", () => {
   }
 });
 
+describe("buildPrompt - 大白话风格（controller 裁决）", () => {
+  const cases: { req: InterpretRequest }[] = [
+    { req: { type: "bazi", topic: "事业", data: bazi } },
+    { req: { type: "liuyao", topic: "感情", data: liuyao } },
+    { req: { type: "tarot", topic: "决策", data: tarot } },
+  ];
+
+  for (const c of cases) {
+    it(`${c.req.type}：system 要求大白话解卦，术语必须配白话解释`, () => {
+      const { system, user } = buildPrompt(c.req);
+
+      // 风格关键词
+      expect(system).toContain("大白话");
+      expect(system).toContain("白话解释");
+      // 白话句式：结论 → 处境 → 注意事项
+      expect(system).toContain("你现在的处境像");
+      expect(system).toContain("接下来要注意");
+      // 不许用术语开头
+      expect(system).toContain("不要用术语开头");
+      // 风格指令只属于 system，不混进 user 段
+      expect(user).not.toContain("大白话");
+      expect(user).not.toContain("你现在的处境像");
+      // 免责句仍是最后一句
+      expect(system.trim().endsWith(DISCLAIMER)).toBe(true);
+    });
+  }
+
+  it("八字：system 明确「日柱天干即日主」，避免模型认错日主", () => {
+    const { system } = buildPrompt({ type: "bazi", topic: "事业", data: bazi });
+    expect(system).toContain("日柱的天干就是日主");
+  });
+});
+
 describe("buildPrompt - user 段排盘数据序列化", () => {
   it("八字：四柱、五行、大运与事项均出现在 user 段", () => {
     const { user } = buildPrompt({ type: "bazi", topic: "事业", data: bazi });
@@ -67,6 +100,7 @@ describe("buildPrompt - user 段排盘数据序列化", () => {
     expect(user).toContain("庚午");
     expect(user).toContain("辛巳");
     expect(user).toContain("年 庚午");
+    expect(user).toContain("日主：甲");
     expect(user).toContain("金 2");
     expect(user).toContain("土 1");
     expect(user).toContain("壬午");

@@ -8,6 +8,8 @@ import {
   type SpreadDef,
 } from "@/lib/tarot/deck";
 import { ShareButton } from "@/components/ShareCard";
+import { AiInterpret } from "@/components/AiInterpret";
+import type { TarotData } from "@/lib/ai/schema";
 
 /** 交互阶段：选阵/洗牌前 → 洗牌动画 → 可抽牌 → 逐张翻牌 → 全部翻开 */
 type Phase = "idle" | "shuffling" | "shuffled" | "dealing" | "done";
@@ -223,6 +225,22 @@ export function TarotSpread() {
     setDrawn([]);
     setRevealed(0);
     setPhase("idle");
+  }
+
+  /**
+   * AI 解读入参映射：牌阵名 + 每张牌的牌名、牌位含义与正逆位。
+   * 牌未翻完（或还没抽牌）时返回 null，按钮保持禁用。
+   */
+  function buildAiData(): TarotData | null {
+    if (phase !== "done" || drawn.length !== positions.length) return null;
+    return {
+      spread: spread.name,
+      cards: drawn.map((entry, i) => ({
+        name: entry.card.name,
+        position: positions[i]?.label ?? `第 ${i + 1} 张`,
+        reversed: entry.reversed,
+      })),
+    };
   }
 
   const actionLabel =
@@ -446,6 +464,8 @@ export function TarotSpread() {
           </ol>
         )}
       </section>
+
+      <AiInterpret type="tarot" buildData={buildAiData} />
 
       {phase === "done" ? (
         <ShareButton targetRef={shareRef} fileName="tarot" label="塔罗抽牌" />
