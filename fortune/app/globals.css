@@ -27,6 +27,14 @@
   --paper-tint: #f3ecdd;
   --rule-warm-soft: #eee4d2;
 
+  /* 古籍界格（纯装饰线，不承载文字，不参与正文对比度）：
+     朱丝栏＝明代刻本的红界行；乌丝栏＝次级墨色界行。 */
+  --rule-cinnabar: rgba(166, 58, 44, 0.38);
+  --rule-ink: rgba(43, 38, 34, 0.28);
+
+  /* 四柱竖排大字：3rem 保底（340px 视口下四栏每栏仍放得下一个字） */
+  --display-xl: clamp(3rem, 10vw, 4.5rem);
+
   /* 五行专用色（宣纸底色上可读的克制配色，逐盘固定语义；全部 ≥4.5:1 于 paper 与 surface-3） */
   --wu-jin: #8a6420;
   --wu-mu: #4d6f47;
@@ -111,6 +119,8 @@
   --color-fg-faint: var(--fg-faint);
   --color-rule: var(--rule);
   --color-rule-soft: var(--rule-soft);
+  --color-rule-cinnabar: var(--rule-cinnabar);
+  --color-rule-ink: var(--rule-ink);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-on-accent: var(--on-accent);
@@ -161,6 +171,43 @@ body {
 
   .tap:active:not(:disabled) {
     transform: scale(0.97);
+  }
+
+  /* ——— 古籍排盘：竖排 / 界格 / 鱼尾 ——— */
+
+  /* 竖排正文（干支、工具名）：拉丁字与数字也正立，避免横躺。 */
+  .vertical {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+  }
+
+  /* 版心鱼尾：两枚 CSS 三角对顶，不引图片资源；纯装饰，aria-hidden。 */
+  .fish-tail {
+    position: relative;
+    display: block;
+    width: 1.5rem;
+    height: 0.5rem;
+    flex: none;
+  }
+
+  .fish-tail::before,
+  .fish-tail::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 0;
+    height: 0;
+    border-block: 0.25rem solid transparent;
+  }
+
+  .fish-tail::before {
+    left: 0;
+    border-left: 0.65rem solid var(--rule-ink);
+  }
+
+  .fish-tail::after {
+    right: 0;
+    border-right: 0.65rem solid var(--rule-ink);
   }
 
 /* 表单单控件统一皮肤 */
@@ -304,6 +351,12 @@ body {
 
 .yao-line--moving {
   background-color: var(--cinnabar);
+}
+
+/* 古籍：结果区的大爻线（撑满栏宽，8px 厚；阴阳分段由组件给宽度） */
+.yao-line--lg {
+  height: 8px;
+  border-radius: 4px 7px 5px 4px;
 }
 
 /* 塔罗：3D 翻转的两面与过渡 */
@@ -531,21 +584,6 @@ body {
     color-mix(in oklab, var(--gold) 24%, transparent) 0deg 5deg,
     transparent 5deg 30deg
   );
-}
-
-/* 六爻：卷轴轴头（大运 / 卦象两端） */
-.scroll-head {
-  position: absolute;
-  top: 50%;
-  z-index: 1;
-  width: 0.5rem;
-  height: 2.75rem;
-  border: 1px solid var(--rule);
-  border-radius: 9999px;
-  background: linear-gradient(var(--surface-3), var(--surface-2));
-  transform: translateY(-50%);
-  box-shadow: 0 1px 0 var(--rule);
-  pointer-events: none;
 }
 
 /* ============================================================================
