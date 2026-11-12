@@ -227,4 +227,11 @@ describe("paiPan note 口径陈述", () => {
     expect(text).toContain("按当日 00:30 取时");
     expect(text).toContain("23:00–24:00");
   });
+
+  it("晚子时 note 的区间与关于页口径一致（23:00–23:59）", () => {
+    const text = paiPan({ y: 2020, m: 1, d: 1, hourIndex: 0, hour: 23, minute: 30, gender: "m" })
+      .note.join("\n");
+    expect(text).toContain("属 23:00–23:59");
+    expect(text).not.toContain("23:00–01:00");
+  });
 });

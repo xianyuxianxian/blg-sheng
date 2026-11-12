@@ -138,7 +138,7 @@ function buildNote(args: {
 
   if (args.isLateZi) {
     note.push(
-      `晚子时换日：出生时刻 ${clock} 属 23:00–01:00，` +
+      `晚子时换日：出生时刻 ${clock} 属 23:00–23:59，` +
         `日柱进一位取次日子时（${args.lateZiSolarYmd}）之日柱，年柱月柱不进位，时干按进位后的日干起。`,
     );
   } else if (args.hourIndex === 0) {
