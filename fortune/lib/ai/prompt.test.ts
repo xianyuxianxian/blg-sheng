@@ -128,6 +128,16 @@ describe("buildPrompt - 补充语", () => {
     const { user } = buildPrompt({ type: "bazi", topic: "其他", data: bazi, extra: "   " });
     expect(user).not.toContain("用户补充");
   });
+
+  it("按 code point 截断：emoji（代理对）不会被截成半个字符", () => {
+    const extra = "😀".repeat(150);
+    const { user } = buildPrompt({ type: "bazi", topic: "其他", data: bazi, extra });
+
+    expect(user).toContain("😀".repeat(EXTRA_MAX));
+    expect(user).not.toContain("😀".repeat(EXTRA_MAX + 1));
+    // 截断后不应残留孤立代理项（U+FFFD 是 TextEncoder 解不出来的替身）
+    expect(user).not.toContain("\uFFFD");
+  });
 });
 
 describe("buildPrompt - 生辰数字不入 prompt（隐私口径固化）", () => {

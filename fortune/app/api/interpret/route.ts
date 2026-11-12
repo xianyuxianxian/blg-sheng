@@ -18,8 +18,13 @@ export const runtime = "nodejs";
 
 /** 上游首字节超时（毫秒）。 */
 const DEFAULT_TIMEOUT_MS = 20_000;
-const DEFAULT_BASE_URL = "https://api.zhipuai.cn/api/paas/v4";
-const DEFAULT_MODEL = "glm-4-flash";
+/**
+ * 默认端点 = 讯飞星火 MaaS（OpenAI 兼容 SSE）。
+ * controller 裁决（2026-11-12）覆盖设计文档里过时的 glm-4-flash 口径；
+ * `AI_BASE_URL` / `AI_MODEL` 仍可用环境变量整体替换（如换 DeepSeek 兼容端点）。
+ */
+const DEFAULT_BASE_URL = "https://maas-api.cn-huabei-1.xf-yun.com/v2";
+const DEFAULT_MODEL = "spark-x2.5-1.7b";
 
 /** 测试注入点：只给单测用小超时/假 fetch，生产走默认。 */
 export type InterpretDeps = {
@@ -85,7 +90,8 @@ export async function handleInterpret(
     });
   } catch (err) {
     clearTimeout(timer);
-    const aborted = err instanceof Error && err.name === "AbortError";
+    // 不依赖 instanceof Error：跨 realm 的 DOMException / 被包装过的错误也要认
+    const aborted = (err as { name?: unknown } | null | undefined)?.name === "AbortError";
     return aborted
       ? errorJson(502, "upstream_timeout", "解读服务响应超时，请稍后重试")
       : errorJson(502, "upstream_error", "解读服务暂时不可用，请稍后重试");
@@ -100,6 +106,11 @@ export async function handleInterpret(
   }
   if (!upstream.body) {
     return errorJson(502, "upstream_error", "解读服务未返回流式内容");
+  }
+  // 200 但不是 SSE（如网关把错误包成 JSON）→ 不能当流读，转成 502 让前端走降级
+  const upstreamType = upstream.headers.get("content-type") ?? "";
+  if (!upstreamType.includes("text/event-stream")) {
+    return errorJson(502, "upstream_error", "解读服务返回了非流式响应");
   }
 
   return new Response(upstream.body.pipeThrough(createSseForwarder()), {

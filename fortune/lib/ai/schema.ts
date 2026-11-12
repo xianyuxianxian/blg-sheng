@@ -31,18 +31,35 @@ export const EXTRA_MAX = 100;
 /** 传输层硬上限：远大于 100 只为挡住异常大包，正常输入不会命中。 */
 const EXTRA_HARD_MAX = 1000;
 
-/** 干支/卦名/牌名这类短标签：限长是为了防注入长文本塞进 user 段。 */
-const shortLabel = z.string().min(1).max(8);
+/**
+ * 短标签与干支的白名单。
+ *
+ * 干支用正则锁死为「天干 + 地支」两字：防伪造字段把自由文本（生辰数字、
+ * 提示词注入句）混进 user 段。四柱、大运、六爻纳甲都是这一种形状。
+ */
+const GAN = "[甲乙丙丁戊己庚辛壬癸]";
+const ZHI = "[子丑寅卯辰巳午未申酉戌亥]";
+const GAN_ZHI_PATTERN = new RegExp(`^${GAN}${ZHI}$`);
+
+const ganZhi = z.string().regex(GAN_ZHI_PATTERN, {
+  error: "必须是天干+地支的两字干支",
+});
 const nameLabel = z.string().min(1).max(20);
-const wuXingCount = z.number().nonnegative();
+/** 五行计数：本盘口径合计恒为 8，max(60) 只留余量，挡住 1990 这类伪造值。 */
+const wuXingCount = z.number().int().nonnegative().max(60);
+
+/** 六亲固定五类（与 lib/liuyao/types.ts 的 LiuQin 一致）。 */
+const liuQin = z.enum(["父母", "兄弟", "子孙", "妻财", "官鬼"]);
+/** 世应标记只允许三种取值。 */
+const shiYing = z.enum(["", "世", "应"]);
 
 /** 八字：四柱干支字符串 + 五行计数 + 大运干支，不含任何数字生辰。 */
 export const baziDataSchema = z.object({
   siZhu: z.object({
-    year: shortLabel,
-    month: shortLabel,
-    day: shortLabel,
-    hour: shortLabel,
+    year: ganZhi,
+    month: ganZhi,
+    day: ganZhi,
+    hour: ganZhi,
   }),
   wuXing: z.object({
     金: wuXingCount,
@@ -51,7 +68,7 @@ export const baziDataSchema = z.object({
     火: wuXingCount,
     土: wuXingCount,
   }),
-  daYun: z.array(shortLabel).max(12),
+  daYun: z.array(ganZhi).max(12),
 });
 
 /** 六爻：本卦 / 变卦名 + 动爻索引（0-5 自下而上）+ 六爻装卦结果（6 爻）。 */
@@ -62,10 +79,9 @@ export const liuyaoDataSchema = z.object({
   lines: z
     .array(
       z.object({
-        ganzhi: shortLabel,
-        liuQin: shortLabel,
-        /** "世" / "应" / "" 等标记，限长即可，不做枚举以免前端口径变动就 400。 */
-        shiYing: z.string().max(8),
+        ganzhi: ganZhi,
+        liuQin,
+        shiYing,
       }),
     )
     .length(6),
@@ -106,7 +122,8 @@ export type InterpretRequest = z.infer<typeof interpretRequestSchema>;
 /**
  * 补充语归一化：去首尾空白并截断到 {@link EXTRA_MAX} 字。
  * 超长不报错（设计文档口径：服务端截断）。
+ * 按 code point 切分，避免把 emoji 之类代理对截成半个字符。
  */
 export function normalizeExtra(extra?: string): string {
-  return (extra ?? "").trim().slice(0, EXTRA_MAX).trim();
+  return Array.from((extra ?? "").trim()).slice(0, EXTRA_MAX).join("").trim();
 }

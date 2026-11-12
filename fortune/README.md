@@ -32,7 +32,9 @@ npm run build   # next build（含 /api/interpret 服务端路由，产物在 .n
 3. 构建命令与输出目录保持默认（`next build`，产物 `.next/` 由 Next.js 自动处理）；
    Install Command 保持默认 `npm install`。
 4. 环境变量（服务端）：`ZHIPU_API_KEY` **必填**（未配置时 `/api/interpret` 返回 503，
-   页面排盘功能不受影响）；`AI_BASE_URL`、`AI_MODEL` 可选，用于切换 OpenAI 兼容端点与模型。
+   页面排盘功能不受影响）。`AI_BASE_URL`、`AI_MODEL` 可选，**已有默认值**，不配即走
+   讯飞星火 MaaS：`AI_BASE_URL=https://maas-api.cn-huabei-1.xf-yun.com/v2`、
+   `AI_MODEL=spark-x2.5-1.7b`；换 OpenAI 兼容端点时整体覆盖这两个变量即可。
 
 `app/sitemap.ts` 与 `app/robots.ts` 在构建期生成 `/sitemap.xml`、`/robots.txt`，
 其中的绝对地址由 `config/site.ts` 的 `SITE_URL` 拼接。**上线前必须把 `SITE_URL`
