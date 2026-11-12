@@ -84,11 +84,22 @@ function plainText(text: string): string {
 }
 
 export function AiInterpret({ type, buildData }: AiInterpretProps) {
+  // 用排盘结果的指纹做 key：换盘 / 换卦 / 重抽牌时整个面板重新挂载，
+  // 上一轮解读自然清空，进行中的请求也会随卸载被 abort。
+  // 比「用 effect 监听 data 再手动清状态」更稳：没有 setState-in-effect，也没有陈旧闭包。
+  const data = buildData();
+  const dataKey = data ? JSON.stringify(data) : "";
+  return <AiInterpretPanel key={dataKey} type={type} buildData={buildData} />;
+}
+
+function AiInterpretPanel({ type, buildData }: AiInterpretProps) {
   const [topic, setTopic] = useState<Topic>(TOPICS[0]);
   const [extra, setExtra] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [answer, setAnswer] = useState("");
   const [errorText, setErrorText] = useState<string | null>(null);
+  /** 服务端未配置（503）：按钮置灰，避免反复点同一个必然失败的请求。 */
+  const [notConfigured, setNotConfigured] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   /** 用户主动停止过：流正常收尾也要落到「已停止」而不是「已完成」。 */
   const stoppedRef = useRef(false);
@@ -129,7 +140,12 @@ export function AiInterpret({ type, buildData }: AiInterpretProps) {
 
       if (!res.ok) {
         setPhase("error");
-        setErrorText(res.status === 503 ? ERROR_NOT_CONFIGURED : ERROR_UNAVAILABLE);
+        if (res.status === 503) {
+          setNotConfigured(true);
+          setErrorText(ERROR_NOT_CONFIGURED);
+        } else {
+          setErrorText(ERROR_UNAVAILABLE);
+        }
         return;
       }
       if (!res.body) {
@@ -223,7 +239,7 @@ export function AiInterpret({ type, buildData }: AiInterpretProps) {
       </div>
 
       <p className="text-[11px] leading-5 text-[#786c57]">
-        选一个想问的方向，可补一句话说明。只发送{TYPE_LABEL[type]}排盘结果（干支、卦象或牌面），不含生辰。
+        选一个想问的方向，可补一句话说明。只发送{TYPE_LABEL[type]}排盘结果（干支、卦象或牌面）以及你选择的事项与补充说明，不含生辰。
       </p>
 
       <div className="grid gap-3 sm:grid-cols-[7.5rem_minmax(0,1fr)]">
@@ -232,8 +248,9 @@ export function AiInterpret({ type, buildData }: AiInterpretProps) {
           <select
             id="ai-topic"
             value={topic}
+            disabled={busy || !data}
             onChange={(event) => setTopic(event.currentTarget.value as Topic)}
-            className="h-10 w-full rounded-[2px] border border-[#d8cbb2] bg-[#fffdf7] px-2.5 text-sm text-[#26221b] outline-none transition-colors focus:border-[#a63a2c] focus:ring-2 focus:ring-[#a63a2c]/15"
+            className="h-10 w-full rounded-[2px] border border-[#d8cbb2] bg-[#fffdf7] px-2.5 text-sm text-[#26221b] outline-none transition-colors focus:border-[#a63a2c] focus:ring-2 focus:ring-[#a63a2c]/15 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {TOPICS.map((item) => (
               <option key={item} value={item}>
@@ -255,9 +272,10 @@ export function AiInterpret({ type, buildData }: AiInterpretProps) {
             type="text"
             maxLength={EXTRA_MAX}
             value={extra}
+            disabled={busy || !data}
             onChange={(event) => setExtra(event.currentTarget.value)}
             placeholder="例如：最近在考虑换工作"
-            className="h-10 w-full rounded-[2px] border border-[#d8cbb2] bg-[#fffdf7] px-2.5 text-sm text-[#26221b] outline-none transition-colors placeholder:text-[#a09680] focus:border-[#a63a2c] focus:ring-2 focus:ring-[#a63a2c]/15"
+            className="h-10 w-full rounded-[2px] border border-[#d8cbb2] bg-[#fffdf7] px-2.5 text-sm text-[#26221b] outline-none transition-colors placeholder:text-[#a09680] focus:border-[#a63a2c] focus:ring-2 focus:ring-[#a63a2c]/15 disabled:cursor-not-allowed disabled:opacity-60"
           />
         </label>
       </div>
@@ -267,7 +285,7 @@ export function AiInterpret({ type, buildData }: AiInterpretProps) {
           id="ai-action"
           type="button"
           onClick={busy ? handleStop : handleGenerate}
-          disabled={!data && !busy}
+          disabled={notConfigured || (!data && !busy)}
           className={`h-10 w-full rounded-[2px] px-6 text-sm tracking-[0.2em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a63a2c] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${
             busy
               ? "border border-[#a63a2c] bg-transparent text-[#a63a2c] hover:bg-[#fbf2ec]"
@@ -303,6 +321,12 @@ export function AiInterpret({ type, buildData }: AiInterpretProps) {
               </span>
             ) : null}
           </div>
+        ) : null}
+
+        {phase === "stopped" && hasAnswer ? (
+          <p className="mt-2 text-[11px] leading-5 text-[#786c57]">
+            已停止生成，上方为已生成的部分。
+          </p>
         ) : null}
 
         {phase === "error" && errorText ? (

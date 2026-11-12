@@ -60,7 +60,7 @@ export default function TarotPage() {
               选一个牌阵，洗牌后抽牌。三张阵从左到右依次是过去、现在与未来，每张牌标注正位或逆位，并给出对应解读。
             </p>
             <p className="mt-2 max-w-md text-[11px] leading-5 text-[#786c57]">
-              洗牌与抽牌都在你的浏览器中完成，你的问题不会被记录或上传。
+              排盘在本地完成，你的问题不会上传；点击 AI 解读时除外。
             </p>
           </section>
 

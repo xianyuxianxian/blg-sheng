@@ -59,7 +59,7 @@ export default function LiuyaoPage() {
               动爻标 ○ / ×，并按朱熹变占法取辞。
             </p>
             <p className="mt-2 max-w-md text-[11px] leading-5 text-[#786c57]">
-              起卦与装卦全部在浏览器本地完成，你的问题不会被记录或上传。
+              排盘在本地完成，你的问题不会上传；点击 AI 解读时除外。
             </p>
           </section>
 
