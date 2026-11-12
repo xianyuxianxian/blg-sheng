@@ -135,7 +135,7 @@ export function LiuyaoHexagram({ zhuang, title, variant }: LiuyaoHexagramProps) 
       <p className="mt-1 border-t border-[#e3d9c5] pt-2 text-[10px] leading-4 text-[#786c57]">
         {variant === "ben"
           ? "初爻在最下，自下而上成卦；○ 阳爻动，× 阴爻动。"
-          : "变卦由本卦动爻翻转而成，朱色为本卦动爻所变之爻。"}
+          : "变卦由本卦动爻翻转而成，朱色为本卦动爻所变之爻；变卦六亲以本卦宫五行论。"}
       </p>
     </div>
   );

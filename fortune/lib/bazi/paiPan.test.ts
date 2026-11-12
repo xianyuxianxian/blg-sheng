@@ -218,6 +218,7 @@ describe("paiPan note 口径陈述", () => {
     const text = paiPan({ y: 2020, m: 1, d: 2, hourIndex: 0, hour: 0, minute: 45, gender: "m" })
       .note.join("\n");
     expect(text).toContain("00:45");
+    expect(text).toContain("属 00:00–00:59");
     expect(text).not.toContain("未指定到分钟");
     expect(text).not.toContain("按当日 00:30 取时");
   });

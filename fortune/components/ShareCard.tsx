@@ -2,6 +2,7 @@
 
 import { useCallback, useState, type RefObject } from "react";
 import { SITE_NAME } from "@/config/site";
+import { DISCLAIMER_LINE } from "@/data/disclaimer";
 
 /**
  * 分享图：把结果区渲染成 PNG 长图下载。
@@ -192,7 +193,7 @@ function buildCard(body: HTMLElement, label: string | undefined): HTMLElement {
   });
 
   const disclaimer = document.createElement("span");
-  disclaimer.textContent = `${SITE_NAME} · 仅供传统文化参考，不构成决策建议`;
+  disclaimer.textContent = `${SITE_NAME} · ${DISCLAIMER_LINE}`;
   const privacy = document.createElement("span");
   privacy.textContent = "生辰本地计算 · 不上传";
   footer.append(disclaimer, privacy);

@@ -3,7 +3,8 @@
  *
  * 术语约定：
  * - 爻位索引 0-5 自下而上（0 = 初爻，5 = 上爻），与 `data/64gua.json` 一致。
- * - 六亲以**本宫五行**为「我」，不取变卦、不取日干（传统京房装卦法）。
+ * - 六亲以**宫位五行**为「我」：本卦取本宫五行；变卦仍以本卦宫五行为「我」
+ *   （传统京房装卦法，不取变卦自身宫、不取日干）。
  * - 本模块为纯计算层：不得 import React / app / components。
  */
 
@@ -26,9 +27,9 @@ export interface Yao {
   gan: string;
   /** 纳甲地支，如 "子" */
   diZhi: string;
-  /** 地支五行（六亲由本宫五行与此五行论生克得出） */
+  /** 地支五行（六亲由六亲基准五行与此五行论生克得出） */
   wuXing: WuXing;
-  /** 六亲（相对本宫五行） */
+  /** 六亲（本卦相对本宫五行；变卦相对本卦宫五行） */
   liuQin: LiuQin;
   /** 动爻标记（由 `zhuangGua` 的 `movingLines` 入参决定） */
   isMoving: boolean;
@@ -58,7 +59,7 @@ export interface ZhuangResult {
   xiaGua: Trigram;
   /** 京房八宫归属，如 "乾宫" */
   palaceGong: PalaceGong;
-  /** 本宫五行（六亲基准），如乾宫为 "金" */
+  /** 该卦自身宫位五行，如乾宫为 "金"；变卦的六亲基准可能另有来源（见 `Yao.liuQin`） */
   palaceWuXing: WuXing;
   /** 世爻索引 0-5 */
   shiYao: number;

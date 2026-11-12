@@ -6,7 +6,8 @@
  *   真实随机在 Task 9 的 UI 层用 `lib/random.ts` 的 `randomInt` 组装后传入。
  * - 时间：`qiGuaByTime` 用传入 `Date` 的农历年支/月/日/时辰取数；
  *   23:00-23:59 为晚子时，归次日取农历日数（与八字页换日口径一致）。
- * - 变卦：翻转动爻（阳变阴、阴变阳）后重新取上下卦，再调 `zhuangGua` 装卦。
+ * - 变卦：翻转动爻（阳变阴、阴变阳）后重新取上下卦，再调 `zhuangGua` 装卦；
+ *   变卦六亲以本卦宫五行为「我」（京房体系），世应与纳甲仍取变卦自身。
  *
  * 本模块禁止 import React / app / components。
  */
@@ -94,10 +95,12 @@ function buildResult(
   let bianGua: ZhuangResult | null = null;
   if (moving.length > 0) {
     const flipped = lines.map((yang, i) => (moving.includes(i) ? !yang : yang));
+    // 变卦六亲以本卦宫五行为「我」（京房体系）；世应/纳甲仍取变卦自身数据。
     bianGua = zhuangGua(
       trigramOfLines(flipped.slice(3, 6)),
       trigramOfLines(flipped.slice(0, 3)),
       moving,
+      benGua.palaceWuXing,
     );
   }
 

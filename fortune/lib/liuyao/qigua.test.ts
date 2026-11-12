@@ -106,11 +106,42 @@ describe("qiGuaByCoin：注入掷币结果得确定卦象", () => {
       [...LAO_YIN],
     ]);
     const expectBen = zhuangGua("震", "离", [2, 5]);
-    const expectBian = zhuangGua("离", "震", [2, 5]);
+    // 变卦六亲以本卦宫五行（丰在坎宫，水）为基准
+    const expectBian = zhuangGua("离", "震", [2, 5], expectBen.palaceWuXing);
     expect(r.benGua).toEqual(expectBen);
     expect(r.bianGua).toEqual(expectBian);
     // 变卦的卦爻辞取该卦自身（丰 → 噬嗑）
     expect(r.bianGua?.benGua.guaCi).toBe(getGua("离", "震").guaCi);
+  });
+
+  it("变卦六亲以本卦宫五行论：遁（乾宫金）初爻动 → 同人（离宫火）仍按金推导", () => {
+    const r = qiGuaByCoin([
+      [...LAO_YIN], // 初爻 阴 动
+      [...SHAO_YIN], // 二爻 阴
+      [...SHAO_YANG], // 三爻 阳
+      [...SHAO_YANG], // 四爻 阳
+      [...SHAO_YANG], // 五爻 阳
+      [...SHAO_YANG], // 上爻 阳
+    ]);
+    expect(r.benGua.name).toBe("遁");
+    expect(r.benGua.palaceGong).toBe("乾宫");
+    expect(r.benGua.palaceWuXing).toBe("金");
+    expect(r.movingLines).toEqual([0]);
+    expect(r.bianGua?.name).toBe("同人");
+    expect(r.bianGua?.palaceGong).toBe("离宫");
+    // 变卦自身宫五行是火，六亲仍按本卦乾宫金：
+    // 卯木我克=妻财、丑土生我=父母、亥水我生=子孙、午火克我=官鬼、申金同我=兄弟、戌土生我=父母
+    expect(r.bianGua?.yao.map((y) => y.liuQin)).toEqual([
+      "妻财",
+      "父母",
+      "子孙",
+      "官鬼",
+      "兄弟",
+      "父母",
+    ]);
+    // 世应仍取变卦自身（同人归魂世在三爻）；本卦遁为乾宫二世，世在二爻
+    expect(r.benGua.shiYao).toBe(1);
+    expect(r.bianGua?.shiYao).toBe(2);
   });
 
   it("不修改入参 tosses", () => {

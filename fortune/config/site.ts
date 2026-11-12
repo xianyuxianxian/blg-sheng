@@ -10,3 +10,12 @@
 
 /** 站点名称，全站唯一来源 */
 export const SITE_NAME = "blg必胜";
+
+/**
+ * 站点正式地址（含协议、不带末尾斜杠）。
+ *
+ * sitemap.xml / robots.txt 里的绝对地址由它拼接。当前是占位域名，
+ * **上线前必须改成真实域名**（见 README「部署说明」），否则搜索引擎
+ * 拿到的会是一批 example.com 链接。
+ */
+export const SITE_URL = "https://example.com";

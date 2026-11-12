@@ -134,6 +134,48 @@ describe("zhuangGua 装卦 pin（乾/坤/既济/泰/需/姤）", () => {
   }
 });
 
+describe("zhuangGua 的 liuQinBasis：变卦六亲以本卦宫五行论", () => {
+  // 天火同人（乾上离下）：离宫归魂（世在三爻、应在六爻），纳甲 己卯己丑己亥 / 壬午壬申壬戌。
+  // 以本卦乾宫金为「我」推导：卯木我克=妻财、丑土生我=父母、亥水我生=子孙、
+  // 午火克我=官鬼、申金同我=兄弟、戌土生我=父母。
+  it("传入金：六亲按金论，宫位/世应/纳甲仍取同人自身数据", () => {
+    const r = zhuangGua("乾", "离", [0], "金");
+
+    expect(r.name).toBe("同人");
+    expect(r.palaceGong).toBe("离宫");
+    // 自身宫位五行不随六亲基准改变
+    expect(r.palaceWuXing).toBe("火");
+    // 世应取同人自身（归魂世在三爻），不是乾宫遁的世应
+    expect(r.shiYao).toBe(2);
+    expect(r.yingYao).toBe(5);
+
+    expect(r.yao.map((y) => y.gan)).toEqual(["己", "己", "己", "壬", "壬", "壬"]);
+    expect(r.yao.map((y) => y.diZhi)).toEqual(["卯", "丑", "亥", "午", "申", "戌"]);
+    expect(r.yao.map((y) => y.liuQin)).toEqual([
+      "妻财",
+      "父母",
+      "子孙",
+      "官鬼",
+      "兄弟",
+      "父母",
+    ]);
+    expect(r.yao.flatMap((y) => (y.isShi ? [y.index] : []))).toEqual([2]);
+    expect(r.yao.flatMap((y) => (y.isYing ? [y.index] : []))).toEqual([5]);
+  });
+
+  it("缺省不传基准：仍按该卦自身宫五行（火）论，既有调用不受影响", () => {
+    const r = zhuangGua("乾", "离", [0]);
+    expect(r.yao.map((y) => y.liuQin)).toEqual([
+      "父母",
+      "子孙",
+      "官鬼",
+      "兄弟",
+      "妻财",
+      "子孙",
+    ]);
+  });
+});
+
 describe("六亲规则（以本宫五行为我）", () => {
   it("以金为我：同兄弟、生我父母、我生子孙、克我官鬼、我克妻财", () => {
     expect(liuQinOf("金", "金")).toBe("兄弟");

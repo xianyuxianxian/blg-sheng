@@ -3,7 +3,8 @@
  *
  * 纯查表 + 规则计算，无副作用：
  * - 纳甲干支：内卦（下卦）取纳甲表前 3 位，外卦（上卦）取后 3 位。
- * - 六亲：以本宫五行为「我」——同我兄弟、生我父母、我生子孙、克我官鬼、我克妻财。
+ * - 六亲：以六亲基准五行为「我」——同我兄弟、生我父母、我生子孙、克我官鬼、我克妻财。
+ *   缺省取该卦自身宫五行；变卦由调用方传入本卦宫五行（京房体系变卦六亲仍以本卦宫为「我」）。
  * - 世应、宫位：直接取 `data/64gua.json`（已经过数据评审）。
  * - 动爻：入参 `movingLines` 只做标记，不决定哪些爻动（起卦在 Task 8）。
  */
@@ -63,16 +64,21 @@ function normalizeMovingLines(movingLines: number[]): number[] {
  * @param shangGua 上卦（外卦）
  * @param xiaGua 下卦（内卦）
  * @param movingLines 动爻索引数组（0-5，自下而上）；乱序/重复会被归一化
+ * @param liuQinBasis 六亲基准五行；传入时六亲按此论，缺省取本卦自身宫五行。
+ *   变卦应传本卦宫五行（京房体系变卦六亲始终以本卦宫为「我」）；
+ *   世应、纳甲干支、宫位不受此参数影响，仍取被装之卦自身数据。
  */
 export function zhuangGua(
   shangGua: Trigram,
   xiaGua: Trigram,
   movingLines: number[],
+  liuQinBasis?: WuXing,
 ): ZhuangResult {
   const entry = getGua(shangGua, xiaGua);
   const inner = NAJIA[xiaGua];
   const outer = NAJIA[shangGua];
   const palaceWuXing = PALACE_WUXING[entry.palaceGong] as WuXing;
+  const liuQinWuXing = liuQinBasis ?? palaceWuXing;
   const moving = new Set(normalizeMovingLines(movingLines));
 
   const yao: Yao[] = Array.from({ length: 6 }, (_, i) => {
@@ -84,7 +90,7 @@ export function zhuangGua(
       gan: isInner ? inner.gan[i] : outer.gan[i],
       diZhi,
       wuXing,
-      liuQin: liuQinOf(palaceWuXing, wuXing),
+      liuQin: liuQinOf(liuQinWuXing, wuXing),
       isMoving: moving.has(i),
       isShi: entry.shiYao === i,
       isYing: entry.yingYao === i,
