@@ -292,10 +292,8 @@ function DaYunAxis({
               <div className="mt-2 text-[10px] leading-tight text-[#5b5344]">
                 {step.startAge}–{step.endAge} 岁
               </div>
-              <div
-                data-share-redact="derived"
-                className="text-[9px] leading-tight text-[#786c57]"
-              >
+              {/* 大运年份区间保留：裁决是「大运可读性优先」，分享图只隐出生年份 */}
+              <div className="text-[9px] leading-tight text-[#786c57]">
                 {step.startYear}–{step.endYear}
               </div>
             </li>

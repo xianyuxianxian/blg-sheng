@@ -32,11 +32,33 @@ const PIXEL_RATIO = 2;
 
 /** 分享图里出生年份的占位符。 */
 const REDACTED_YEAR = "××××";
-/** 由生辰推算出来的日期（起运时刻、大运年份区间）替换成的占位文案。 */
+/** 由生辰推算出来的起运时刻替换成的占位文案。 */
 const REDACTED_DATE = "年份略";
 /** `YYYY-MM-DD` 形式的日期（排盘口径里的起运日期）。 */
 const REDACTED_DATE_PATTERN = /\d{4}-\d{2}-\d{2}/g;
 const REDACTED_DATE_PLACEHOLDER = "××××-××-××";
+
+/** 单张图的生成上限：超过就报错，避免按钮永久 disabled。 */
+const CAPTURE_TIMEOUT_MS = 20_000;
+
+/** 给 Promise 加超时；超时和失败走同一条错误路径。 */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`${label}超时（${Math.round(ms / 1000)} 秒）`));
+    }, ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
 
 export type ShareImageOptions = {
   /** 卡片右上角的场景标签，如「八字排盘」。 */
@@ -63,7 +85,7 @@ function replaceInTextNodes(root: Node, replace: (text: string) => string): void
 /**
  * 在克隆上脱敏：结果组件用 `data-share-redact` 标出需要处理的位置。
  * - `year`：元素内容整段换成 `××××`（出生年份本身）。
- * - `derived`：整段换成占位文案（起运时刻、大运年份区间——都能反推出生年）。
+ * - `derived`：整段换成占位文案（起运公历时刻；大运年份区间按裁决保留）。
  * - `dates`：只把 `YYYY-MM-DD` 换成 `××××-××-××`（排盘口径里的起运日期）。
  *
  * 说明：年份单独包成元素而不是靠正则匹配，因为 JSX 里数字与「年」常分属不同文本节点。
@@ -198,6 +220,7 @@ export async function createShareImage(
 
   const clone = target.cloneNode(true) as HTMLElement;
   // 副本与页面同时在文档里，去掉重复 id 免得 aria-labelledby 指向错节点。
+  clone.removeAttribute("id");
   clone.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
   clone.querySelectorAll("[data-share-hide]").forEach((el) => el.remove());
 
@@ -222,12 +245,16 @@ export async function createShareImage(
     expandScrollStrips(card);
     freezeAnimations(card);
 
-    return await toPng(card, {
-      pixelRatio: PIXEL_RATIO,
-      backgroundColor: PAPER,
-      // 只用系统字体：webfont 不内嵌，规避 html-to-image 的字体兼容问题。
-      skipFonts: true,
-    });
+    return await withTimeout(
+      toPng(card, {
+        pixelRatio: PIXEL_RATIO,
+        backgroundColor: PAPER,
+        // 只用系统字体：webfont 不内嵌，规避 html-to-image 的字体兼容问题。
+        skipFonts: true,
+      }),
+      CAPTURE_TIMEOUT_MS,
+      "生成分享图",
+    );
   } finally {
     holder.remove();
   }
@@ -292,9 +319,13 @@ export function ShareButton({
       downloadShareImage(dataUrl, `${fileName}-${dateStamp()}.png`);
       setMessage("分享图已生成，请查看浏览器下载。");
     } catch (error) {
-      setMessage(
-        error instanceof Error ? `生成失败：${error.message}` : "生成失败，请重试。",
-      );
+      // 库的原始错误（含 DOM/canvas 细节）只留给控制台，界面给固定中文文案。
+      console.error("[share]", error);
+      const detail =
+        process.env.NODE_ENV !== "production" && error instanceof Error
+          ? `（${error.message}）`
+          : "";
+      setMessage(`生成失败，请重试${detail}`);
     } finally {
       setBusy(false);
     }

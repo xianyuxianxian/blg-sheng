@@ -385,7 +385,8 @@ export function TarotSpread() {
           )}
         </div>
 
-        <div className="mt-6 flex flex-col items-center gap-3">
+        {/* 操作区（洗牌/抽牌按钮 + 提示）不进入分享图；牌面在上面的 ol 里 */}
+        <div data-share-hide className="mt-6 flex flex-col items-center gap-3">
           <button
             type="button"
             onClick={phase === "shuffled" ? handleDraw : handleShuffle}
