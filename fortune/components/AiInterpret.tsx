@@ -295,10 +295,14 @@ function AiInterpretPanel({
                 : HINT_NEEDS_RESULT;
 
   const actionLabel = busy ? "停止" : phase === "idle" ? "生成解读" : "重新解读";
+  // 古籍文书外壳：八字/六爻用朱丝栏；塔罗深色页已验收，保持原界格不动。
+  const shellRule = type === "tarot" ? "border-rule" : "border-rule-cinnabar";
 
   return (
     <section aria-labelledby="ai-interpret-heading" data-share-hide className="space-y-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-b border-rule pb-2">
+      <div
+        className={`flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-b pb-2 ${shellRule}`}
+      >
         <h2
           id="ai-interpret-heading"
           className="flex items-center gap-2 font-serif text-[15px] tracking-[0.18em] text-fg"
@@ -395,7 +399,7 @@ function AiInterpretPanel({
       <div
         id="ai-output"
         aria-busy={busy}
-        className={`min-h-[3rem] rounded-[2px] border border-rule bg-surface-2 px-4 py-3 ${
+        className={`min-h-[3rem] bg-surface-2 px-4 py-3 border ${shellRule} ${
           type === "liuyao" ? "border-l-2 border-l-gold" : ""
         }`}
       >
