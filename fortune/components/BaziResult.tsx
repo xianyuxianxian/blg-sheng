@@ -64,8 +64,10 @@ function SiZhuTable({ result, birth, gender }: BaziResultProps) {
         <h2 id="sizhu-heading" className="font-serif text-[15px] tracking-[0.18em]">
           四柱排盘
         </h2>
+        {/* data-share-redact：分享图默认隐去出生年，只改克隆，不改页面 */}
         <p className="text-xs text-[#6f6451]">
-          公历 {birth.y} 年 {birth.m} 月 {birth.d} 日 {pad2(birth.hour)}:{pad2(birth.minute)} ·{" "}
+          公历 <span data-share-redact="year">{birth.y}</span> 年 {birth.m} 月 {birth.d} 日{" "}
+          {pad2(birth.hour)}:{pad2(birth.minute)} ·{" "}
           {gender === "m" ? "男" : "女"} · 日主
           <span
             className="mx-1 font-serif text-sm font-semibold"
@@ -259,7 +261,8 @@ function DaYunAxis({
 
       <p className="text-[11px] leading-5 text-[#6f6451]">
         起运：出生后 {qiYun.startYear} 年 {qiYun.startMonth} 个月 {qiYun.startDay} 天（
-        {qiYun.startSolar}）
+        {/* 起运公历时刻可反推出生年，分享图里隐去 */}
+        <span data-share-redact="derived">{qiYun.startSolar}</span>）
       </p>
 
       <ol className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 [scrollbar-width:thin]">
@@ -289,6 +292,7 @@ function DaYunAxis({
               <div className="mt-2 text-[10px] leading-tight text-[#5b5344]">
                 {step.startAge}–{step.endAge} 岁
               </div>
+              {/* 大运年份区间保留：裁决是「大运可读性优先」，分享图只隐出生年份 */}
               <div className="text-[9px] leading-tight text-[#786c57]">
                 {step.startYear}–{step.endYear}
               </div>
@@ -332,7 +336,11 @@ function Interpretation({ result }: { result: PaiPanResult }) {
 /** 排盘口径：原样展示计算层给出的 note。 */
 function Notes({ note }: { note: string[] }) {
   return (
-    <section aria-labelledby="notes-heading" className="space-y-3">
+    <section
+      aria-labelledby="notes-heading"
+      data-share-redact="dates"
+      className="space-y-3"
+    >
       <SectionTitle>
         <span id="notes-heading">排盘口径</span>
       </SectionTitle>
