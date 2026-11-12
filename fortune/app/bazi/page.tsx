@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BaziCalculator } from "@/components/BaziCalculator";
+import { DisclaimerFooter } from "@/components/DisclaimerFooter";
 import { SITE_NAME } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: `八字排盘 · ${SITE_NAME}`,
+  title: "八字排盘",
   description:
     "按节气与晚子时口径排四柱，查看五行分布、十神、藏干、纳音与大运。所有计算在浏览器本地完成。",
 };
@@ -54,7 +55,7 @@ export default function BaziPage() {
             </div>
 
             <p className="mt-5 max-w-md text-sm leading-7 text-[#5b5344]">
-              以出生地北京时间排四柱，标注十神、藏干与纳音，并排 10 步大运。年柱以立春、月柱以节令为界。
+              以北京时间排四柱，标注十神、藏干与纳音，并排 10 步大运。年柱以立春、月柱以节令为界。
             </p>
             <p className="mt-2 max-w-md text-[11px] leading-5 text-[#786c57]">
               所有计算在浏览器本地完成，生辰不会离开你的设备。
@@ -64,15 +65,7 @@ export default function BaziPage() {
           <BaziCalculator />
         </main>
 
-        <footer className="mt-14 border-t border-[#ddd2bb] pt-5 text-[11px] leading-6 text-[#6f6451]">
-          <p>本工具仅供传统文化参考与娱乐，不构成任何决策建议。</p>
-          <p className="mt-1">
-            <Link href="/about" className="underline decoration-[#c0b294] underline-offset-4 hover:text-[#a63a2c]">
-              了解排盘口径、隐私说明与免责声明
-            </Link>
-          </p>
-          <p className="mt-3 tracking-[0.2em] text-[#786c57]">{SITE_NAME}</p>
-        </footer>
+        <DisclaimerFooter />
       </div>
     </div>
   );

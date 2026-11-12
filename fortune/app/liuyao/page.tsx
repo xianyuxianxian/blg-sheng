@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LiuyaoCast } from "@/components/LiuyaoCast";
+import { DisclaimerFooter } from "@/components/DisclaimerFooter";
 import { SITE_NAME } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: `六爻起卦 · ${SITE_NAME}`,
+  title: "六爻起卦",
   description:
     "三枚铜钱掷六次起卦，或按此刻时间起卦：自下而上成卦，标注六亲、纳甲干支与世应，并按朱熹变占法取辞。所有计算在浏览器本地完成。",
 };
@@ -65,21 +66,7 @@ export default function LiuyaoPage() {
           <LiuyaoCast />
         </main>
 
-        <footer className="mt-14 border-t border-[#ddd2bb] pt-5 text-[11px] leading-6 text-[#6f6451]">
-          <p>本工具仅供传统文化参考与娱乐，不构成任何决策建议。</p>
-          <p className="mt-1">
-            多爻动取辞采用朱熹《易学启蒙》变占法；时间起卦为梅花易数式，23 点后归次日。
-          </p>
-          <p className="mt-1">
-            <Link
-              href="/about"
-              className="underline decoration-[#c0b294] underline-offset-4 hover:text-[#a63a2c]"
-            >
-              了解起卦口径、隐私说明与免责声明
-            </Link>
-          </p>
-          <p className="mt-3 tracking-[0.2em] text-[#786c57]">{SITE_NAME}</p>
-        </footer>
+        <DisclaimerFooter note="多爻动取辞采用朱熹《易学启蒙》变占法；时间起卦为梅花易数式，23 点后归次日。" />
       </div>
     </div>
   );
