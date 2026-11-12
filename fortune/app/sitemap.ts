@@ -1,5 +1,5 @@
 /**
- * 全站 sitemap —— 静态导出时在构建期求值，产物为 `out/sitemap.xml`。
+ * 全站 sitemap —— 构建期求值（`force-static`），Vercel 常规部署下产物为 `.next/static` 内的 `sitemap.xml`。
  *
  * 站点只有 5 个静态路由，全部列在这里；新增页面时同步补一条。
  * 绝对地址由 `SITE_URL` 拼接（占位域名见 `config/site.ts`，上线前要改）。

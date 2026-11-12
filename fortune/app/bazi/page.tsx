@@ -60,8 +60,8 @@ export default function BaziPage() {
             <p className="mt-5 max-w-md text-sm leading-7 text-fg-soft">
               以北京时间排四柱，标注十神、藏干与纳音，并排 10 步大运。年柱以立春、月柱以节令为界。
             </p>
-            <p className="mt-2 max-w-md text-[11px] leading-5 text-fg-faint">
-              所有计算在浏览器本地完成，生辰不会离开你的设备。
+            <p className="mt-2 max-w-md text-[11px] leading-5 text-fg-muted">
+              所有计算在浏览器本地完成，生辰不会离开你的设备；点击 AI 解读时会发送排盘结果（不含生辰）与所问事项。
             </p>
           </section>
 

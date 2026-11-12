@@ -1,5 +1,5 @@
 /**
- * robots.txt —— 静态导出时在构建期求值，产物为 `out/robots.txt`。
+ * robots.txt —— 构建期求值（`force-static`），Vercel 常规部署下产物为 `robots.txt`。
  *
  * 全部页面允许抓取（无私有路由），并指向 sitemap。
  */
