@@ -6,12 +6,18 @@
  * lunar 隔离：`lib/liuyao/qigua.ts` 顶部静态引入 lunar-typescript（时间起卦用），
  * 因此本组件**不静态引入 qigua**，两条路径都在点击回调里 `await import()`，
  * 历法引擎只在真正起卦时才下载，且不进入首屏 bundle。类型用 `import type`，编译期即抹除。
+ *
+ * 问事前置：起卦前必须选类别（传统一事一占）；未选时掷币/起卦按钮禁用。
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LiuyaoResult } from "@/components/LiuyaoResult";
+import { QuestionBanner, QuestionProvider, type Question } from "@/components/QuestionContext";
+import { TopicPicker } from "@/components/TopicPicker";
+import { topicActionLabel } from "@/components/topic-label";
 import { BEI_FACE, ZI_FACE, type CoinFace } from "@/lib/liuyao/coins";
 import { randomInt } from "@/lib/random";
+import type { Topic } from "@/lib/ai/schema";
 import type { QiGuaResult } from "@/lib/liuyao/qigua";
 import type { QuZhanResult } from "@/lib/liuyao/bianZhan";
 
@@ -25,6 +31,8 @@ type Outcome = {
   quZhan: QuZhanResult;
   /** 起卦时刻（本地时间，已格式化） */
   castAt: string;
+  /** 起卦时定格的所问（事项 + 补充语）。 */
+  question: Question;
 };
 
 /** 爻位名（自下而上） */
@@ -52,8 +60,16 @@ function tossCoins(): Toss {
   return [0, 1, 2].map(() => (randomInt(2) === 0 ? ZI_FACE : BEI_FACE));
 }
 
+/**
+ * 仅供掷币台即时画爻：字数偶数 → 阳爻（0 字老阳、2 字少阳），奇数 → 阴爻。
+ * 与 `lib/liuyao/qigua.ts` 的 BY_ZI_COUNT 同口径；这里只决定线条形状，不产出卦象。
+ */
+function isYangToss(toss: Toss): boolean {
+  return toss.filter((face) => face === ZI_FACE).length % 2 === 0;
+}
+
 /** 掷币起卦：动态引入起卦与变占模块；`moment` 为掷满第六爻的时刻 */
-async function castByCoin(tosses: Toss[], moment: Date): Promise<Outcome> {
+async function castByCoin(tosses: Toss[], moment: Date): Promise<Omit<Outcome, "question">> {
   const [{ qiGuaByCoin }, { bianZhan }] = await Promise.all([
     import("@/lib/liuyao/qigua"),
     import("@/lib/liuyao/bianZhan"),
@@ -67,7 +83,7 @@ async function castByCoin(tosses: Toss[], moment: Date): Promise<Outcome> {
 }
 
 /** 时间起卦：以点击时刻取数（`Date` 在 await 之前捕获，避免加载耗时改变时刻） */
-async function castByTime(moment: Date): Promise<Outcome> {
+async function castByTime(moment: Date): Promise<Omit<Outcome, "question">> {
   const [{ qiGuaByTime }, { bianZhan }] = await Promise.all([
     import("@/lib/liuyao/qigua"),
     import("@/lib/liuyao/bianZhan"),
@@ -80,25 +96,40 @@ async function castByTime(moment: Date): Promise<Outcome> {
   };
 }
 
-/** 一枚铜钱：字（朱）或背（褐），以文字与颜色双重区分 */
-function Coin({ face }: { face: number }) {
+/** 一枚铜钱：外圆 + 中央方孔，字/背以字形与颜色双重区分（不刻真实年号）。 */
+function Coin({ face }: { face: CoinFace }) {
   const isZi = face === ZI_FACE;
   return (
-    <span
-      className={`grid h-6 w-6 place-items-center rounded-full border text-[10px] leading-none ${
-        isZi
-          ? "border-[#a63a2c] bg-[#fbf2ec] text-[#a63a2c]"
-          : "border-[#c0b294] bg-[#fdfaf2] text-[#6f6451]"
-      }`}
-    >
-      {isZi ? "字" : "背"}
+    <span className={`coin h-7 w-7 sm:h-8 sm:w-8 ${isZi ? "coin--zi" : "coin--bei"}`}>
+      <span aria-hidden className="coin-hole h-2 w-2 !border-[1.5px]" />
+      <span aria-hidden className="coin-face">
+        {isZi ? "字" : "背"}
+      </span>
+    </span>
+  );
+}
+
+/** 一根爻线（只画阴阳；动爻由结果区标注）。整根线从中心向两侧生长。 */
+function YaoLine({ yang, animate }: { yang: boolean; animate: boolean }) {
+  const cls = animate ? "anim-line" : "";
+  if (yang) {
+    return (
+      <span className={`flex h-[6px] w-full items-center justify-center ${cls}`}>
+        <span className="yao-line w-full" />
+      </span>
+    );
+  }
+  return (
+    <span className={`flex h-[6px] w-full items-center justify-center gap-1 ${cls}`}>
+      <span className="yao-line w-[42%]" />
+      <span className="yao-line w-[42%]" />
     </span>
   );
 }
 
 /**
  * 掷币台：六行自上而下（上爻在最上），未掷的爻显示为待掷。
- * 成卦后按 `yaoShu` 补上爻名（老阳/少阴…），此处仅掷币法会出现这些名称。
+ * 每次落定，该行的爻线从中心向两侧长出（本页的灵魂交互）。
  */
 function CoinBoard({ tosses, yaoShu }: { tosses: Toss[]; yaoShu?: number[] }) {
   const order = [5, 4, 3, 2, 1, 0];
@@ -127,40 +158,45 @@ function CoinBoard({ tosses, yaoShu }: { tosses: Toss[]; yaoShu?: number[] }) {
 
             <div
               aria-hidden
-              className={`grid grid-cols-[4rem_1fr_3.4rem] items-center gap-x-2 px-1 py-1 ${
-                isLatest ? "bg-[#f3ecdd]" : ""
+              className={`grid grid-cols-[3rem_minmax(0,1fr)_2.2rem_2.9rem] items-center gap-x-1 px-1 py-1 ${
+                isLatest ? "bg-surface-3" : ""
               }`}
             >
-              <span className="text-[10px] leading-4 text-[#6f6451]">
+              <span className="text-[10px] leading-4 text-fg-muted">
                 {YAO_LABELS[index]}
-                <span className="ml-1 text-[#a09680]">第 {index + 1} 掷</span>
+                <span className="ml-1 text-fg-faint">第 {index + 1} 掷</span>
               </span>
 
-              <span className={`flex items-center gap-1.5 ${isLatest ? "liuyao-toss" : ""}`}>
+              <span className="flex items-center gap-1" style={{ perspective: "300px" }}>
                 {toss ? (
                   toss.map((face, i) => (
-                    <span
-                      key={i}
-                      className="liuyao-toss inline-block"
-                      style={{ animationDelay: `${i * 80}ms` }}
-                    >
-                      <Coin face={face} />
+                    <span key={i} className="inline-block">
+                      <span
+                        className={isLatest ? "anim-coin inline-block" : "inline-block"}
+                        style={isLatest ? { animationDelay: `${i * 80}ms` } : undefined}
+                      >
+                        <Coin face={face} />
+                      </span>
                     </span>
                   ))
                 ) : (
                   [0, 1, 2].map((i) => (
                     <span
                       key={i}
-                      className="h-6 w-6 rounded-full border border-dashed border-[#ddd2bb]"
+                      className="h-7 w-7 rounded-full border border-dashed border-rule sm:h-8 sm:w-8"
                     />
                   ))
                 )}
               </span>
 
-              <span className="text-right text-[11px] leading-4 text-[#786c57]">
+              <span className="flex items-center">
+                {toss ? <YaoLine yang={isYangToss(toss)} animate={isLatest} /> : null}
+              </span>
+
+              <span className="text-right text-[11px] leading-4 text-fg-faint">
                 {toss ? (
                   name !== undefined ? (
-                    <span className="font-serif text-[#a63a2c]">
+                    <span className="font-serif text-accent">
                       {YAO_SHU_NAME[name]}
                       {name === 6 || name === 9 ? " · 动" : ""}
                     </span>
@@ -168,7 +204,7 @@ function CoinBoard({ tosses, yaoShu }: { tosses: Toss[]; yaoShu?: number[] }) {
                     <span>已成爻</span>
                   )
                 ) : (
-                  <span className="text-[#a09680]">待掷</span>
+                  <span className="text-fg-faint">待掷</span>
                 )}
               </span>
             </div>
@@ -185,10 +221,27 @@ export function LiuyaoCast() {
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [topic, setTopic] = useState<Topic | null>(null);
+  const [extra, setExtra] = useState("");
+  const resultRef = useRef<HTMLDivElement | null>(null);
 
   const tossed = tosses.length;
   const finished = outcome !== null;
   const busy = loading || finished;
+  const askLabel = topicActionLabel("liuyao", topic);
+
+  // 成卦后：等卦名浮现（300ms 延迟 + 520ms 动画）再滚到装卦区
+  useEffect(() => {
+    if (!outcome) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const timer = window.setTimeout(() => {
+      resultRef.current?.scrollIntoView({
+        behavior: reduced ? "auto" : "smooth",
+        block: "start",
+      });
+    }, 720);
+    return () => window.clearTimeout(timer);
+  }, [outcome]);
 
   function resetAll() {
     setTosses([]);
@@ -204,7 +257,7 @@ export function LiuyaoCast() {
   }
 
   async function handleToss() {
-    if (busy || tossed >= 6) return;
+    if (busy || tossed >= 6 || !topic) return;
     const next = [...tosses, tossCoins()];
     setTosses(next);
     setError(null);
@@ -214,7 +267,7 @@ export function LiuyaoCast() {
     const moment = new Date();
     setLoading(true);
     try {
-      setOutcome(await castByCoin(next, moment));
+      setOutcome({ ...(await castByCoin(next, moment)), question: { topic, extra: extra.trim() } });
     } catch (err) {
       // 掷币数据本身必然合法；出错时不留在「已掷满却无结果」的死状态
       setTosses([]);
@@ -225,13 +278,13 @@ export function LiuyaoCast() {
   }
 
   async function handleTimeCast() {
-    if (busy) return;
+    if (busy || !topic) return;
     setError(null);
     // 点击时刻即起卦时刻：先定格，再等历法引擎加载
     const moment = new Date();
     setLoading(true);
     try {
-      setOutcome(await castByTime(moment));
+      setOutcome({ ...(await castByTime(moment)), question: { topic, extra: extra.trim() } });
     } catch (err) {
       setError(err instanceof Error ? err.message : "起卦失败，请稍后重试。");
     } finally {
@@ -253,36 +306,33 @@ export function LiuyaoCast() {
 
   return (
     <div className="space-y-8">
-      <style>{`
-        @keyframes liuyao-toss-in {
-          0% { opacity: 0; transform: translateY(-6px) scale(0.94); }
-          60% { opacity: 1; transform: translateY(0) scale(1.02); }
-          100% { opacity: 1; transform: none; }
-        }
-        .liuyao-toss { animation: liuyao-toss-in 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-        @keyframes liuyao-reveal {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: none; }
-        }
-        .liuyao-reveal { animation: liuyao-reveal 420ms ease-out both; }
-        @media (prefers-reduced-motion: reduce) {
-          .liuyao-toss, .liuyao-reveal { animation: none; }
-        }
-      `}</style>
-
       <p role="status" aria-live="polite" className="sr-only">
         {statusText}
       </p>
 
+      <TopicPicker
+        kind="liuyao"
+        topic={topic}
+        onTopicChange={setTopic}
+        extra={extra}
+        onExtraChange={setExtra}
+        required
+        disabled={loading}
+        className="rounded-[2px] border border-rule bg-surface-2 p-5 sm:p-7"
+      />
+
       <section
         aria-labelledby="liuyao-method-heading"
-        className="rounded-[2px] border border-[#ddd2bb] bg-[#fdfaf2] p-5 sm:p-7"
+        className="rounded-[2px] border border-rule bg-surface-2 p-5 sm:p-7"
       >
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-[#e3d9c5] pb-2">
-          <h2 id="liuyao-method-heading" className="font-serif text-[15px] tracking-[0.18em]">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule pb-2">
+          <h2
+            id="liuyao-method-heading"
+            className="font-serif text-[15px] tracking-[0.18em] text-fg"
+          >
             起卦方式
           </h2>
-          <span className="text-[11px] text-[#786c57]">
+          <span className="text-[11px] text-fg-faint">
             {finished ? "更换方式会清空当前卦象" : "择一即可，两种方式取卦结果同等看待"}
           </span>
         </div>
@@ -310,21 +360,21 @@ export function LiuyaoCast() {
                 aria-pressed={active}
                 disabled={loading}
                 onClick={() => handleSelectMethod(item.id)}
-                className={`rounded-[2px] border px-4 py-3 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a63a2c] disabled:cursor-not-allowed disabled:opacity-60 ${
+                className={`tap rounded-[2px] border px-4 py-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-60 ${
                   active
-                    ? "border-[#a63a2c] bg-[#fbf2ec]"
-                    : "border-[#ddd2bb] bg-[#fdfaf2] hover:border-[#c0b294]"
+                    ? "border-accent bg-accent-soft"
+                    : "border-rule bg-surface-2 hover:border-gold"
                 }`}
               >
                 <span className="flex items-baseline justify-between gap-3">
-                  <span className="font-serif text-base text-[#26221b]">{item.name}</span>
+                  <span className="font-serif text-base text-fg">{item.name}</span>
                   {active ? (
-                    <span className="rounded-[2px] bg-[#a63a2c] px-1.5 py-0.5 text-[9px] tracking-[0.1em] text-[#fbf6ec]">
+                    <span className="rounded-[2px] bg-accent px-1.5 py-0.5 text-[9px] tracking-[0.1em] text-on-accent">
                       已选
                     </span>
                   ) : null}
                 </span>
-                <span className="mt-1.5 block text-[11px] leading-5 text-[#6f6451]">
+                <span className="mt-1.5 block text-[11px] leading-5 text-fg-muted">
                   {item.desc}
                 </span>
               </button>
@@ -336,11 +386,11 @@ export function LiuyaoCast() {
           {method === "coin" ? (
             <CoinBoard tosses={tosses} yaoShu={outcome?.result.yaoShu} />
           ) : (
-            <div className="rounded-[2px] border border-dashed border-[#ddd2bb] px-4 py-5">
-              <p className="text-[12px] leading-6 text-[#3f382d]">
+            <div className="rounded-[2px] border border-dashed border-rule px-4 py-5">
+              <p className="text-[12px] leading-6 text-fg-soft">
                 按下按钮的瞬间即为起卦时刻，取农历年支、月、日与时辰数。
               </p>
-              <p className="mt-1 text-[11px] leading-5 text-[#786c57]">
+              <p className="mt-1 text-[11px] leading-5 text-fg-faint">
                 23 点后按次日取农历日数（晚子时），时辰仍为子时。
               </p>
             </div>
@@ -348,7 +398,7 @@ export function LiuyaoCast() {
         </div>
 
         {error ? (
-          <p role="alert" className="mt-4 text-xs leading-5 text-[#a63a2c]">
+          <p role="alert" className="mt-4 text-xs leading-5 text-accent">
             {error}
           </p>
         ) : null}
@@ -358,7 +408,7 @@ export function LiuyaoCast() {
             <button
               type="button"
               onClick={resetAll}
-              className="h-11 w-full max-w-[16rem] rounded-[2px] border border-[#a63a2c] bg-transparent px-8 text-sm tracking-[0.25em] text-[#a63a2c] transition-colors hover:bg-[#fbf2ec] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a63a2c]"
+              className="tap h-11 w-full max-w-[16rem] rounded-[2px] border border-accent bg-transparent px-8 text-sm tracking-[0.25em] text-accent hover:bg-accent-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
             >
               重新起卦
             </button>
@@ -366,54 +416,70 @@ export function LiuyaoCast() {
             <button
               type="button"
               onClick={handleToss}
-              disabled={busy}
-              className="h-11 w-full max-w-[16rem] rounded-[2px] bg-[#a63a2c] px-8 text-sm tracking-[0.25em] text-[#fbf6ec] transition-colors hover:bg-[#8f3024] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a63a2c] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={busy || !topic}
+              aria-describedby={!topic ? "liuyao-topic-required" : undefined}
+              className="tap h-11 w-full max-w-[16rem] rounded-[2px] bg-cta px-8 text-sm tracking-[0.25em] text-on-cta hover:bg-cta-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "起卦中…" : tossed >= 6 ? "成卦中…" : `掷第 ${tossed + 1} 爻`}
+              {loading
+                ? "起卦中…"
+                : tossed >= 6
+                  ? "成卦中…"
+                  : tossed === 0 && askLabel
+                    ? askLabel
+                    : `掷第 ${tossed + 1} 爻`}
             </button>
           ) : (
             <button
               type="button"
               onClick={handleTimeCast}
-              disabled={busy}
-              className="h-11 w-full max-w-[16rem] rounded-[2px] bg-[#a63a2c] px-8 text-sm tracking-[0.25em] text-[#fbf6ec] transition-colors hover:bg-[#8f3024] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a63a2c] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={busy || !topic}
+              aria-describedby={!topic ? "liuyao-topic-required" : undefined}
+              className="tap h-11 w-full max-w-[16rem] rounded-[2px] bg-cta px-8 text-sm tracking-[0.25em] text-on-cta hover:bg-cta-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "起卦中…" : "以此刻起卦"}
+              {loading ? "起卦中…" : (askLabel ?? "以此刻起卦")}
             </button>
           )}
 
-          <p className="text-center text-[11px] leading-5 text-[#786c57]">
-            {method === "coin"
-              ? finished
-                ? "已成一卦，可重新起卦，或对照下方卦象与取辞。"
-                : tossed === 0
-                  ? "点击六次，每次三枚铜钱；第 1 次为初爻。"
-                  : `已掷 ${tossed} / 6 次，下一掷为${YAO_LABELS[tossed]}。`
-              : finished
-                ? "已按起卦时刻成卦，可重新起卦。"
-                : "以此刻的农历年月日时取卦。"}
+          <p id="liuyao-topic-required" className="text-center text-[11px] leading-5 text-fg-faint">
+            {!topic
+              ? "先选所问之事，再起卦（一事一占）。"
+              : method === "coin"
+                ? finished
+                  ? "已成一卦，可重新起卦，或对照下方卦象与取辞。"
+                  : tossed === 0
+                    ? "点击六次，每次三枚铜钱；第 1 次为初爻。"
+                    : `已掷 ${tossed} / 6 次，下一掷为${YAO_LABELS[tossed]}。`
+                : finished
+                  ? "已按起卦时刻成卦，可重新起卦。"
+                  : "以此刻的农历年月日时取卦。"}
           </p>
         </div>
       </section>
 
       <div aria-busy={loading}>
         {loading ? (
-          <div className="rounded-[2px] border border-dashed border-[#ddd2bb] px-5 py-8 text-center">
-            <p className="font-serif text-sm tracking-[0.2em] text-[#5b5344]">起卦中…</p>
-            <p className="mt-2 text-[11px] leading-5 text-[#786c57]">
+          <div className="rounded-[2px] border border-dashed border-rule px-5 py-8 text-center">
+            <p className="font-serif text-sm tracking-[0.2em] text-fg-soft">起卦中…</p>
+            <p className="mt-2 text-[11px] leading-5 text-fg-faint">
               首次起卦需加载历法引擎，请稍候。
             </p>
           </div>
         ) : outcome ? (
-          <div className="liuyao-reveal rounded-[2px] border border-[#ddd2bb] bg-[#fdfaf2] p-5 sm:p-7">
-            <LiuyaoResult
-              result={outcome.result}
-              quZhan={outcome.quZhan}
-              castAt={outcome.castAt}
-            />
+          <div
+            ref={resultRef}
+            className="anim-rise space-y-6 rounded-[2px] border border-rule bg-surface-2 p-5 sm:p-7"
+          >
+            <QuestionBanner question={outcome.question} />
+            <QuestionProvider value={outcome.question}>
+              <LiuyaoResult
+                result={outcome.result}
+                quZhan={outcome.quZhan}
+                castAt={outcome.castAt}
+              />
+            </QuestionProvider>
           </div>
         ) : (
-          <p className="border-t border-[#e3d9c5] pt-5 text-[11px] leading-5 text-[#786c57]">
+          <p className="border-t border-rule pt-5 text-[11px] leading-5 text-fg-faint">
             {method === "coin"
               ? "掷满六次后，这里会出现本卦与变卦的卦象、装卦标注与取辞。"
               : "点「以此刻起卦」后，这里会出现本卦与变卦的卦象、取数过程与取辞。"}
