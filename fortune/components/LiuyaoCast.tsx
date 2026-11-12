@@ -467,7 +467,7 @@ export function LiuyaoCast() {
         ) : outcome ? (
           <div
             ref={resultRef}
-            className="anim-rise space-y-6 rounded-[2px] border border-rule bg-surface-2 p-5 sm:p-7"
+            className="anim-rise space-y-6 rounded-[2px] border border-rule-cinnabar bg-surface-2 p-5 sm:p-7"
           >
             <QuestionBanner question={outcome.question} />
             <QuestionProvider value={outcome.question}>

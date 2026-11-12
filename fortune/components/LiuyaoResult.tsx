@@ -5,6 +5,7 @@
  */
 
 import { LiuyaoHexagram } from "@/components/LiuyaoHexagram";
+import { hexagramSymbol } from "@/components/hexagram-symbol";
 import { AiInterpret } from "@/components/AiInterpret";
 import type { QiGuaResult } from "@/lib/liuyao/qigua";
 import type { QuZhanItem, QuZhanResult } from "@/lib/liuyao/bianZhan";
@@ -53,7 +54,7 @@ function TimeBasis({ result }: { result: QiGuaResult }) {
 
   return (
     <section aria-labelledby="liuyao-basis-heading" className="space-y-3">
-      <div className="flex items-baseline justify-between gap-4 border-b border-rule pb-2">
+      <div className="flex items-baseline justify-between gap-4 border-b border-rule-cinnabar pb-2">
         <h2 id="liuyao-basis-heading" className="font-serif text-[15px] tracking-[0.18em] text-fg">
           时间起卦取数
         </h2>
@@ -62,7 +63,7 @@ function TimeBasis({ result }: { result: QiGuaResult }) {
 
       <dl className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
         {rows.map((row) => (
-          <div key={row.label} className="border-l border-rule pl-3">
+          <div key={row.label} className="border-l border-rule-ink pl-3">
             <dt className="text-[10px] tracking-[0.12em] text-fg-faint">{row.label}</dt>
             <dd className="mt-0.5 font-serif text-[13px] text-fg">{row.value}</dd>
           </div>
@@ -102,7 +103,7 @@ export function LiuyaoResult({ result, quZhan, castAt }: LiuyaoResultProps) {
   return (
     <div className="space-y-8">
       <section aria-labelledby="liuyao-gua-heading" className="space-y-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule pb-2">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule-cinnabar pb-2">
           <h2 id="liuyao-gua-heading" className="font-serif text-[15px] tracking-[0.18em] text-fg">
             卦象
           </h2>
@@ -116,13 +117,19 @@ export function LiuyaoResult({ result, quZhan, castAt }: LiuyaoResultProps) {
           <p className="text-[10px] tracking-[0.4em] text-fg-faint">
             {result.method === "time" ? "梅花易数" : "三钱六掷"}
           </p>
-          <p className="mt-1.5 font-serif text-[32px] leading-tight tracking-[0.18em] text-fg sm:text-[36px]">
-            {result.benGua.name}
+          <p className="mt-1.5 flex flex-wrap items-center justify-center gap-x-2 font-serif text-[30px] leading-tight tracking-[0.16em] text-fg sm:text-[34px]">
+            <span aria-hidden className="text-[40px] leading-none text-accent sm:text-[44px]">
+              {hexagramSymbol(result.benGua.shangGua, result.benGua.xiaGua)}
+            </span>
+            <span>{result.benGua.name}</span>
             {result.bianGua ? (
-              <span className="text-fg-faint">
-                <span className="mx-2 text-[0.55em] tracking-normal">之</span>
-                {result.bianGua.name}
-              </span>
+              <>
+                <span className="mx-1 text-[0.55em] tracking-normal text-fg-faint">之</span>
+                <span aria-hidden className="text-[40px] leading-none text-accent sm:text-[44px]">
+                  {hexagramSymbol(result.bianGua.shangGua, result.bianGua.xiaGua)}
+                </span>
+                <span className="text-fg-faint">{result.bianGua.name}</span>
+              </>
             ) : null}
           </p>
           <p className="mt-1 text-[11px] leading-5 text-fg-muted">
@@ -159,7 +166,7 @@ export function LiuyaoResult({ result, quZhan, castAt }: LiuyaoResultProps) {
       <TimeBasis result={result} />
 
       <section aria-labelledby="liuyao-quzhan-heading" className="space-y-4">
-        <div className="flex items-baseline justify-between gap-4 border-b border-rule pb-2">
+        <div className="flex items-baseline justify-between gap-4 border-b border-rule-cinnabar pb-2">
           <h2
             id="liuyao-quzhan-heading"
             className="font-serif text-[15px] tracking-[0.18em] text-fg"
@@ -169,7 +176,7 @@ export function LiuyaoResult({ result, quZhan, castAt }: LiuyaoResultProps) {
           <span className="shrink-0 text-[11px] text-fg-faint">朱熹《易学启蒙》变占法</span>
         </div>
 
-        <p className="rounded-[2px] border-l-2 border-gold bg-surface-3 px-3 py-2 text-[12px] leading-6 text-fg-soft">
+        <p className="border border-rule-cinnabar bg-surface-3 px-3 py-2 text-[12px] leading-6 text-fg-soft">
           {quZhan.rule}
           <span className="mt-1 block text-[10px] leading-4 text-fg-muted">
             主 = 主占之辞，辅 = 兼参之辞，贞 = 本卦，悔 = 变卦。
@@ -189,7 +196,10 @@ export function LiuyaoResult({ result, quZhan, castAt }: LiuyaoResultProps) {
                   {item.yaoName ? ` · ${item.yaoName}` : ""}
                 </span>
               </div>
-              <p className="mt-2 text-sm leading-7 text-fg-soft">{item.text}</p>
+              {/* 朱丝栏引文：原文左侧朱线，仿刻本夹批 */}
+              <p className="mt-2 border-l-2 border-rule-cinnabar pl-3 font-serif text-sm leading-7 text-fg-soft">
+                {item.text}
+              </p>
             </li>
           ))}
         </ol>

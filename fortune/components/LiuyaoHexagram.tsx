@@ -3,9 +3,13 @@
  *
  * 阴阳取自装卦结果的上下经卦（`TRIGRAM_LINES`），不从起卦结果另传，
  * 避免图示与装卦数据不一致。动爻标记：○ 阳爻动、× 阴爻动（朱砂色，出现时脉冲一次）。
+ *
+ * 版式（古籍排盘）：外框朱丝栏，装卦标注区用乌丝栏分栏——六亲/世应 | 纳甲干支 | 爻线，
+ * 界线对齐爻线，爻线按真实爻画比例撑满栏宽（阳整条、阴两段带 gap）。
  */
 
 import { TRIGRAM_LINES } from "@/lib/liuyao/guaShape";
+import { hexagramSymbol } from "@/components/hexagram-symbol";
 import type { ZhuangResult } from "@/lib/liuyao/types";
 
 /** 爻位序数：索引 0-5 自下而上 */
@@ -19,20 +23,20 @@ function yaoName(index: number, yang: boolean): string {
   return `${num}${YAO_POS[index]}`;
 }
 
-/** 阴阳爻画：阳一长横，阴两短横；手绘感来自 `.yao-line` 的轻微不规则圆角与墨点。 */
+/** 阴阳爻画：阳一长横，阴两段带 gap；8px 大字量，宽度撑满栏。 */
 function LineGlyph({ yang, moving }: { yang: boolean; moving: boolean }) {
   const tone = moving ? "yao-line--moving" : "";
   if (yang) {
     return (
-      <span className="flex h-[6px] w-full items-center">
-        <span className={`yao-line w-full ${tone}`} />
+      <span className="flex h-[8px] w-full items-center">
+        <span className={`yao-line yao-line--lg w-full ${tone}`} />
       </span>
     );
   }
   return (
-    <span className="flex h-[6px] w-full items-center gap-1.5">
-      <span className={`yao-line w-[46%] ${tone}`} />
-      <span className={`yao-line w-[46%] ${tone}`} />
+    <span className="flex h-[8px] w-full items-center gap-[9%]">
+      <span className={`yao-line yao-line--lg flex-1 ${tone}`} />
+      <span className={`yao-line yao-line--lg flex-1 ${tone}`} />
     </span>
   );
 }
@@ -57,10 +61,16 @@ export function LiuyaoHexagram({ zhuang, title, variant }: LiuyaoHexagramProps) 
   const order = [5, 4, 3, 2, 1, 0];
 
   return (
-    <div className="rounded-[2px] border border-rule bg-surface p-3 sm:p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-rule pb-2">
-        <h3 className="font-serif text-[14px] tracking-[0.16em] text-fg">
-          {title} · {zhuang.name}
+    <div className="border border-rule-cinnabar bg-surface p-3 sm:p-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-rule-cinnabar pb-2">
+        <h3 className="flex items-center gap-2 font-serif text-[14px] tracking-[0.16em] text-fg">
+          {/* 卦符是装饰图形，卦名文本已承担语义 */}
+          <span aria-hidden className="text-[22px] leading-none text-accent">
+            {hexagramSymbol(zhuang.shangGua, zhuang.xiaGua)}
+          </span>
+          <span>
+            {title} · {zhuang.name}
+          </span>
         </h3>
         <span className="text-[11px] text-fg-faint">
           {zhuang.shangGua}上 {zhuang.xiaGua}下 · {zhuang.palaceGong}
@@ -76,7 +86,7 @@ export function LiuyaoHexagram({ zhuang, title, variant }: LiuyaoHexagramProps) 
         {`${title}${zhuang.name}，${zhuang.shangGua}上${zhuang.xiaGua}下，${zhuang.palaceGong}。以下六爻自上而下排列，初爻在最下方。`}
       </p>
 
-      <ol className="mt-1">
+      <ol className="mt-2 border-t border-rule-ink">
         {order.map((index) => {
           const yao = zhuang.yao[index];
           const yang = lines[index];
@@ -100,29 +110,31 @@ export function LiuyaoHexagram({ zhuang, title, variant }: LiuyaoHexagramProps) 
             .join("，");
 
           return (
-            <li key={index} className="border-b border-rule-soft last:border-b-0">
+            <li key={index} className="border-b border-rule-ink last:border-b-0">
               <span className="sr-only">{summary}。</span>
               <div
                 aria-hidden
-                className="grid grid-cols-[2.4rem_2rem_1.1rem_minmax(2.2rem,1fr)_1.1rem_1.6rem] items-center gap-x-1 py-[7px]"
+                className="grid grid-cols-[3.3rem_2.9rem_minmax(0,1fr)_1.1rem_1.7rem] items-center"
               >
-                <span className="font-serif text-[12px] text-fg">{yao.liuQin}</span>
-                <span className="font-serif text-[12px] tracking-[0.04em] text-fg-soft">
-                  {yao.gan}
-                  {yao.diZhi}
-                </span>
-                <span className="text-[10px] leading-none">
+                <span className="flex items-center gap-1 py-[9px] font-serif text-[12px] text-fg">
+                  {yao.liuQin}
                   {shiYing === "世" ? (
-                    <span className="inline-block rounded-[1px] bg-accent px-1 py-[2px] text-on-accent">
+                    <span className="rounded-[1px] bg-accent px-0.5 py-[1px] text-[9px] leading-none text-on-accent">
                       世
                     </span>
                   ) : shiYing === "应" ? (
-                    <span className="inline-block rounded-[1px] border border-gold px-1 py-[2px] text-fg-muted">
+                    <span className="border border-gold px-0.5 py-[1px] text-[9px] leading-none text-fg-muted">
                       应
                     </span>
                   ) : null}
                 </span>
-                <LineGlyph yang={yang} moving={moving} />
+                <span className="border-l border-rule-ink py-[9px] pl-1.5 font-serif text-[12px] text-fg-soft">
+                  {yao.gan}
+                  {yao.diZhi}
+                </span>
+                <span className="border-l border-rule-ink py-[9px] pl-2 pr-1">
+                  <LineGlyph yang={yang} moving={moving} />
+                </span>
                 <span className="text-center font-serif text-[12px] leading-none text-accent">
                   {variant === "ben" && moving ? (
                     <span className="anim-pulse inline-block">{yang ? "○" : "×"}</span>
@@ -139,7 +151,7 @@ export function LiuyaoHexagram({ zhuang, title, variant }: LiuyaoHexagramProps) 
         })}
       </ol>
 
-      <p className="mt-1 border-t border-rule pt-2 text-[10px] leading-4 text-fg-faint">
+      <p className="mt-2 border-t border-rule-ink pt-2 text-[10px] leading-4 text-fg-faint">
         {variant === "ben"
           ? "初爻在最下，自下而上成卦；○ 阳爻动，× 阴爻动。"
           : "变卦由本卦动爻翻转而成，朱色为本卦动爻所变之爻；变卦六亲以本卦宫五行论。"}
