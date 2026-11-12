@@ -1,16 +1,28 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Noto_Sans_TC, Noto_Serif_TC } from "next/font/google";
 import { SITE_NAME } from "@/config/site";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+/**
+ * 字体白托管：next/font 在构建期把 Google Fonts 的字形分片下载到本地，
+ * 运行时浏览器只请求同源资源 —— 没有第三方请求，隐私口径与「本地计算」一致。
+ *
+ * CJK 字体按 unicode-range 切成上百个分片，无法逐片 preload（preload 只会命中
+ * `/* latin *\/` 这类带子集注释的分片），因此关闭 preload、用 font-display: swap，
+ * 让浏览器只取页面实际用到的字形分片。
+ */
+const notoSans = Noto_Sans_TC({
+  variable: "--font-noto-sans-tc",
   subsets: ["latin"],
+  display: "swap",
+  preload: false,
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const notoSerif = Noto_Serif_TC({
+  variable: "--font-noto-serif-tc",
   subsets: ["latin"],
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -26,7 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="zh-CN"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${notoSans.variable} ${notoSerif.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
