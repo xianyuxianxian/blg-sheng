@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { BaziResult, type BirthSummary } from "@/components/BaziResult";
+import { ShareButton } from "@/components/ShareCard";
 import { hourToHourIndex } from "@/lib/bazi/hourIndex";
 import type { PaiPanResult } from "@/lib/bazi/types";
 
@@ -56,6 +57,8 @@ export function BaziCalculator() {
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  /** 分享图截图目标：结果区内容，不含外框与按钮。 */
+  const resultRef = useRef<HTMLDivElement | null>(null);
 
   const year = Number(yearText.trim());
   const effectiveDay = Math.min(day, daysInMonth(year, month));
@@ -247,8 +250,18 @@ export function BaziCalculator() {
             </p>
           </div>
         ) : outcome ? (
-          <div className="rounded-[2px] border border-[#ddd2bb] bg-[#fdfaf2] p-5 sm:p-7">
-            <BaziResult result={outcome.result} birth={outcome.birth} gender={outcome.gender} />
+          <div className="space-y-4">
+            <div className="rounded-[2px] border border-[#ddd2bb] bg-[#fdfaf2] p-5 sm:p-7">
+              <div ref={resultRef}>
+                <BaziResult result={outcome.result} birth={outcome.birth} gender={outcome.gender} />
+              </div>
+            </div>
+            <ShareButton
+              targetRef={resultRef}
+              fileName="bazi"
+              label="八字排盘"
+              birthPrivacy
+            />
           </div>
         ) : (
           <p className="border-t border-[#e3d9c5] pt-5 text-[11px] leading-5 text-[#786c57]">

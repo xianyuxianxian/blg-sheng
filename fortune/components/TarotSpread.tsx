@@ -7,6 +7,7 @@ import {
   type DrawnCard,
   type SpreadDef,
 } from "@/lib/tarot/deck";
+import { ShareButton } from "@/components/ShareCard";
 
 /** 交互阶段：选阵/洗牌前 → 洗牌动画 → 可抽牌 → 逐张翻牌 → 全部翻开 */
 type Phase = "idle" | "shuffling" | "shuffled" | "dealing" | "done";
@@ -165,6 +166,8 @@ export function TarotSpread() {
   const [drawSeq, setDrawSeq] = useState(0);
   // 持有预热图引用，避免 Image 对象被回收导致请求中断
   const preloads = useRef<HTMLImageElement[]>([]);
+  /** 分享图截图目标：整个抽牌结果区（牌阵选择区在分享图中隐去）。 */
+  const shareRef = useRef<HTMLDivElement | null>(null);
 
   const spread = SPREAD_LIST.find((item) => item.id === spreadId) ?? SPREAD_LIST[0];
   const positions = spread.positions;
@@ -260,7 +263,7 @@ export function TarotSpread() {
               : "";
 
   return (
-    <div className="space-y-8">
+    <div ref={shareRef} className="space-y-8">
       {/* 洗牌 / 翻牌 / 淡入动画；偏好减少动效时全部关闭 */}
       <style>{`
         .tarot-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
@@ -288,7 +291,11 @@ export function TarotSpread() {
         {statusText}
       </p>
 
-      <section aria-labelledby="spread-heading" className="space-y-3">
+      <section
+        aria-labelledby="spread-heading"
+        data-share-hide
+        className="space-y-3"
+      >
         <div className="flex items-baseline justify-between gap-4 border-b border-[#e3d9c5] pb-2">
           <h2 id="spread-heading" className="font-serif text-[15px] tracking-[0.18em]">
             选择牌阵
@@ -438,6 +445,10 @@ export function TarotSpread() {
           </ol>
         )}
       </section>
+
+      {phase === "done" ? (
+        <ShareButton targetRef={shareRef} fileName="tarot" label="塔罗抽牌" />
+      ) : null}
     </div>
   );
 }
