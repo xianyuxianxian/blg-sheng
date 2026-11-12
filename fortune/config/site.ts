@@ -18,4 +18,4 @@ export const SITE_NAME = "blg必胜";
  * **上线前必须改成真实域名**（见 README「部署说明」），否则搜索引擎
  * 拿到的会是一批 example.com 链接。
  */
-export const SITE_URL = "https://example.com";
+export const SITE_URL = "https://blg-sheng.2080556766.workers.dev";
