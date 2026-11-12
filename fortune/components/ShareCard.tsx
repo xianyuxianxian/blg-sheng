@@ -21,11 +21,35 @@ const SANS_STACK =
 /** 标题/干支用衬线系统字体栈。 */
 const SERIF_STACK = 'ui-serif, Georgia, "Songti SC", "SimSun", serif';
 
-const PAPER = "#f7f2e7";
-const INK = "#26221b";
-const MUTED = "#6f6451";
-const ACCENT = "#a63a2c";
-const RULE = "#ddd2bb";
+/** 分享图色板：与 app/globals.css 的 tokens 同值，但截图不用 CSS 变量（克隆节点可能脱离皮肤容器）。 */
+type Palette = {
+  /** 卡片底色 */
+  bg: string;
+  ink: string;
+  muted: string;
+  accent: string;
+  rule: string;
+  /** 深色卡片：给克隆容器挂皮肤 class，让 var(--*) 语义色继续成立 */
+  skinClass?: string;
+};
+
+const PALETTES: Record<ShareTheme, Palette> = {
+  paper: {
+    bg: "#faf6ee",
+    ink: "#2b2622",
+    muted: "#6f6451",
+    accent: "#a63a2c",
+    rule: "#e4dcc8",
+  },
+  dark: {
+    bg: "#1c1917",
+    ink: "#d6c7a1",
+    muted: "#b9a98a",
+    accent: "#d9a441",
+    rule: "#4a4038",
+    skinClass: "skin-tarot",
+  },
+};
 
 /** 卡片逻辑宽度（CSS px）。导出按 2 倍像素密度，得到 1440px 宽的长图。 */
 const CARD_WIDTH = 720;
@@ -61,11 +85,15 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   });
 }
 
+export type ShareTheme = "paper" | "dark";
+
 export type ShareImageOptions = {
   /** 卡片右上角的场景标签，如「八字排盘」。 */
   label?: string;
   /** 隐去出生年份与由生辰推算的日期；只影响分享图。 */
   hideBirthYear?: boolean;
+  /** 卡片配色：默认宣纸；塔罗页传 dark（深底金字）。 */
+  theme?: ShareTheme;
 };
 
 /**
@@ -132,15 +160,20 @@ function expandScrollStrips(root: HTMLElement): void {
 }
 
 /** 卡片外框：顶部 SITE_NAME 水印 + 正文 + 底部免责与隐私说明。返回的节点即截图目标。 */
-function buildCard(body: HTMLElement, label: string | undefined): HTMLElement {
+function buildCard(
+  body: HTMLElement,
+  label: string | undefined,
+  palette: Palette,
+): HTMLElement {
   const card = document.createElement("div");
   card.setAttribute("aria-hidden", "true");
+  if (palette.skinClass) card.className = palette.skinClass;
   Object.assign(card.style, {
     width: `${CARD_WIDTH}px`,
     padding: "36px 36px 28px",
     boxSizing: "border-box",
-    backgroundColor: PAPER,
-    color: INK,
+    backgroundColor: palette.bg,
+    color: palette.ink,
     fontFamily: SANS_STACK,
     fontSize: "14px",
     lineHeight: "1.6",
@@ -154,7 +187,7 @@ function buildCard(body: HTMLElement, label: string | undefined): HTMLElement {
     gap: "16px",
     paddingBottom: "14px",
     marginBottom: "28px",
-    borderBottom: `1px solid ${RULE}`,
+    borderBottom: `1px solid ${palette.rule}`,
   });
 
   const brand = document.createElement("span");
@@ -163,7 +196,7 @@ function buildCard(body: HTMLElement, label: string | undefined): HTMLElement {
     fontFamily: SERIF_STACK,
     fontSize: "20px",
     letterSpacing: "0.16em",
-    color: ACCENT,
+    color: palette.accent,
   });
 
   const tag = document.createElement("span");
@@ -171,7 +204,7 @@ function buildCard(body: HTMLElement, label: string | undefined): HTMLElement {
   Object.assign(tag.style, {
     fontSize: "11px",
     letterSpacing: "0.2em",
-    color: MUTED,
+    color: palette.muted,
   });
 
   header.append(brand, tag);
@@ -186,10 +219,10 @@ function buildCard(body: HTMLElement, label: string | undefined): HTMLElement {
     gap: "8px 16px",
     paddingTop: "14px",
     marginTop: "32px",
-    borderTop: `1px solid ${RULE}`,
+    borderTop: `1px solid ${palette.rule}`,
     fontSize: "11px",
     lineHeight: "1.7",
-    color: MUTED,
+    color: palette.muted,
   });
 
   const disclaimer = document.createElement("span");
@@ -218,6 +251,7 @@ export async function createShareImage(
 
   // 动态引入：html-to-image 只在点击「保存分享图」时需要。
   const { toPng } = await import("html-to-image");
+  const palette = PALETTES[options.theme ?? "paper"];
 
   const clone = target.cloneNode(true) as HTMLElement;
   // 副本与页面同时在文档里，去掉重复 id 免得 aria-labelledby 指向错节点。
@@ -229,7 +263,7 @@ export async function createShareImage(
 
   // 截图节点本身不能带 position/left 偏移：html-to-image 会把内联样式原样搬进
   // foreignObject，带偏移会渲染成空白。离屏只放在外层 holder 上。
-  const card = buildCard(clone, options.label);
+  const card = buildCard(clone, options.label, palette);
   const holder = document.createElement("div");
   Object.assign(holder.style, {
     position: "fixed",
@@ -249,7 +283,7 @@ export async function createShareImage(
     return await withTimeout(
       toPng(card, {
         pixelRatio: PIXEL_RATIO,
-        backgroundColor: PAPER,
+        backgroundColor: palette.bg,
         // 只用系统字体：webfont 不内嵌，规避 html-to-image 的字体兼容问题。
         skipFonts: true,
       }),
@@ -288,6 +322,8 @@ export type ShareButtonProps = {
   label?: string;
   /** 显示「分享图显示完整出生日期」开关（含生辰的页面传 true）。 */
   birthPrivacy?: boolean;
+  /** 分享图配色：默认宣纸，塔罗页传 dark。 */
+  theme?: ShareTheme;
   className?: string;
 };
 
@@ -296,6 +332,7 @@ export function ShareButton({
   fileName,
   label,
   birthPrivacy = false,
+  theme = "paper",
   className = "",
 }: ShareButtonProps) {
   // 默认隐去年份：开关只影响分享图，页面本体始终显示完整日期。
@@ -316,6 +353,7 @@ export function ShareButton({
       const dataUrl = await createShareImage(target, {
         label,
         hideBirthYear: birthPrivacy && !showFullDate,
+        theme,
       });
       downloadShareImage(dataUrl, `${fileName}-${dateStamp()}.png`);
       setMessage("分享图已生成，请查看浏览器下载。");
@@ -330,7 +368,7 @@ export function ShareButton({
     } finally {
       setBusy(false);
     }
-  }, [targetRef, fileName, label, birthPrivacy, showFullDate]);
+  }, [targetRef, fileName, label, birthPrivacy, showFullDate, theme]);
 
   return (
     <div data-share-hide className={`flex flex-col gap-3 ${className}`.trim()}>
@@ -338,29 +376,29 @@ export function ShareButton({
         type="button"
         onClick={handleClick}
         disabled={busy}
-        className="h-10 w-full rounded-[2px] border border-[#a63a2c] px-6 text-sm tracking-[0.2em] text-[#a63a2c] transition-colors hover:bg-[#fbf2ec] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a63a2c] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        className="tap h-10 w-full rounded-[2px] border border-accent px-6 text-sm tracking-[0.2em] text-accent hover:bg-accent-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
         {busy ? "生成中…" : "保存分享图"}
       </button>
 
       {birthPrivacy ? (
-        <label className="flex items-start gap-2 text-[11px] leading-5 text-[#6f6451]">
+        <label className="flex items-start gap-2 text-[11px] leading-5 text-fg-muted">
           <input
             type="checkbox"
             checked={showFullDate}
             onChange={(e) => setShowFullDate(e.currentTarget.checked)}
-            className="mt-[3px] h-3.5 w-3.5 accent-[#a63a2c]"
+            className="mt-[3px] h-3.5 w-3.5 accent-[var(--accent)]"
           />
           <span>
             在分享图中显示完整出生日期
-            <span className="mt-0.5 block text-[#786c57]">
+            <span className="mt-0.5 block text-fg-faint">
               默认隐去出生年份；开关只影响分享图，页面显示不变。生辰仅在本地处理，不会上传。
             </span>
           </span>
         </label>
       ) : null}
 
-      <p role="status" aria-live="polite" className="min-h-4 text-[11px] leading-5 text-[#786c57]">
+      <p role="status" aria-live="polite" className="min-h-4 text-[11px] leading-5 text-fg-faint">
         {message}
       </p>
     </div>

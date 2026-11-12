@@ -27,10 +27,10 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="border-t border-[#ddd2bb] py-8">
+    <section className="border-t border-rule py-8">
       <div className="flex items-baseline gap-3">
-        <span className="font-serif text-[11px] tracking-[0.2em] text-[#a63a2c]">{index}</span>
-        <h2 className="font-serif text-lg tracking-[0.1em] text-[#26221b]">{title}</h2>
+        <span className="font-serif text-[11px] tracking-[0.2em] text-accent">{index}</span>
+        <h2 className="font-serif text-lg tracking-[0.1em] text-fg">{title}</h2>
       </div>
       <div className="mt-4 flex flex-col gap-4">{children}</div>
     </section>
@@ -43,8 +43,10 @@ function PointList({ points }: { points: readonly CopyPoint[] }) {
     <>
       {points.map((point) => (
         <div key={point.title}>
-          <p className="text-[13px] font-medium tracking-[0.04em] text-[#3f382d]">{point.title}</p>
-          <p className="mt-1 text-[13px] leading-7 text-[#5b5344]">{point.body}</p>
+          <p className="text-[13px] font-medium tracking-[0.04em] text-fg">
+            {point.title}
+          </p>
+          <p className="mt-1 text-[13px] leading-7 text-fg-soft">{point.body}</p>
         </div>
       ))}
     </>
@@ -53,16 +55,16 @@ function PointList({ points }: { points: readonly CopyPoint[] }) {
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen border-t-2 border-[#a63a2c] bg-[#f7f2e7] text-[#26221b]">
+    <div className="min-h-screen border-t-2 border-accent bg-surface text-fg">
       <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col px-5 pb-10 pt-6 sm:px-8 sm:pt-8">
-        <header className="flex items-center justify-between border-b border-[#ddd2bb] pb-4">
+        <header className="flex items-center justify-between border-b border-rule pb-4">
           <Link
             href="/"
-            className="flex items-center gap-2.5 text-sm tracking-[0.2em] text-[#3f382d] transition-colors hover:text-[#a63a2c]"
+            className="tap flex items-center gap-2.5 text-sm tracking-[0.2em] text-fg-soft hover:text-accent"
           >
             <span
               aria-hidden
-              className="grid h-6 w-6 place-items-center bg-[#a63a2c] font-serif text-[13px] leading-none text-[#fbf6ec]"
+              className="grid h-6 w-6 place-items-center bg-accent font-serif text-[13px] leading-none text-on-accent"
             >
               命
             </span>
@@ -70,7 +72,7 @@ export default function AboutPage() {
           </Link>
           <Link
             href="/"
-            className="text-[11px] tracking-[0.15em] text-[#6f6451] transition-colors hover:text-[#a63a2c]"
+            className="tap text-[11px] tracking-[0.15em] text-fg-muted hover:text-accent"
           >
             返回首页
           </Link>
@@ -78,12 +80,12 @@ export default function AboutPage() {
 
         <main className="flex-1">
           <section className="py-10 sm:py-12">
-            <p className="text-[11px] tracking-[0.35em] text-[#786c57]">关于 · 隐私 · 口径</p>
-            <h1 className="mt-3 font-serif text-3xl tracking-[0.12em] text-[#26221b] sm:text-4xl">
+            <p className="text-[11px] tracking-[0.35em] text-fg-muted">关于 · 隐私 · 口径</p>
+            <h1 className="mt-3 font-serif text-3xl tracking-[0.12em] text-fg sm:text-4xl">
               关于本站
             </h1>
             {PRODUCT_INTRO.map((paragraph) => (
-              <p key={paragraph} className="mt-5 max-w-lg text-sm leading-7 text-[#5b5344]">
+              <p key={paragraph} className="mt-5 max-w-lg text-sm leading-7 text-fg-soft">
                 {paragraph}
               </p>
             ))}
@@ -91,22 +93,22 @@ export default function AboutPage() {
 
           <Section index="一" title="隐私说明">
             <PointList points={PRIVACY_POINTS} />
-            <p className="rounded-[2px] border-l-2 border-[#a63a2c] bg-[#f3ecdd] px-3 py-2 text-[13px] leading-7 text-[#5b5344]">
+            <p className="rounded-[2px] border-l-2 border-accent bg-surface-3 px-3 py-2 text-[13px] leading-7 text-fg-soft">
               排盘结果（不含你的生辰）会在你点击 AI 解读时发送给模型服务，用于生成解读。
             </p>
           </Section>
 
           <Section index="二" title="排盘口径">
-            <p className="text-[13px] leading-7 text-[#5b5344]">
+            <p className="text-[13px] leading-7 text-fg-soft">
               下面每一条都对应页面上可见的推导过程。口径与你的师承不同时，以你采用的规则为准。
             </p>
             <dl className="flex flex-col gap-4">
               {METHOD_NOTES.map((note) => (
                 <div key={note.title}>
-                  <dt className="text-[13px] font-medium tracking-[0.04em] text-[#3f382d]">
+                  <dt className="text-[13px] font-medium tracking-[0.04em] text-fg-soft">
                     {note.title}
                   </dt>
-                  <dd className="mt-1 text-[13px] leading-7 text-[#5b5344]">{note.body}</dd>
+                  <dd className="mt-1 text-[13px] leading-7 text-fg-soft">{note.body}</dd>
                 </div>
               ))}
             </dl>
@@ -117,16 +119,16 @@ export default function AboutPage() {
           </Section>
         </main>
 
-        <footer className="mt-12 border-t border-[#ddd2bb] pt-5 text-[11px] leading-6 text-[#6f6451]">
+        <footer className="mt-12 border-t border-rule pt-5 text-[11px] leading-6 text-fg-muted">
           <p>
             <Link
               href="/"
-              className="underline decoration-[#c0b294] underline-offset-4 hover:text-[#a63a2c]"
+              className="tap underline decoration-rule underline-offset-4 hover:text-accent"
             >
               回到首页
             </Link>
           </p>
-          <p className="mt-3 tracking-[0.2em] text-[#786c57]">{SITE_NAME}</p>
+          <p className="mt-3 tracking-[0.2em] text-fg-faint">{SITE_NAME}</p>
         </footer>
       </div>
     </div>

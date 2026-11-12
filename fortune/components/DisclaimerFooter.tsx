@@ -13,21 +13,22 @@ export type DisclaimerFooterProps = {
  *
  * 三个功能页原本各自重复这三行，统一到这里；
  * 需要补充口径的页面（如六爻）通过 `note` 传入，不改动其他页面。
+ * 颜色全部走语义 token，深浅页共用。
  */
 export function DisclaimerFooter({ note }: DisclaimerFooterProps) {
   return (
-    <footer className="mt-14 border-t border-[#ddd2bb] pt-5 text-[11px] leading-6 text-[#6f6451]">
+    <footer className="mt-14 border-t border-rule pt-5 text-[11px] leading-6 text-fg-muted">
       <p>{DISCLAIMER_LINE}</p>
       {note ? <p className="mt-1">{note}</p> : null}
       <p className="mt-1">
         <Link
           href="/about"
-          className="underline decoration-[#c0b294] underline-offset-4 hover:text-[#a63a2c]"
+          className="tap underline decoration-rule underline-offset-4 hover:text-accent"
         >
           了解排盘口径、隐私说明与免责声明
         </Link>
       </p>
-      <p className="mt-3 tracking-[0.2em] text-[#786c57]">{SITE_NAME}</p>
+      <p className="mt-3 tracking-[0.2em] text-fg-faint">{SITE_NAME}</p>
     </footer>
   );
 }
