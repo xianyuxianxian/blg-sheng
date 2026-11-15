@@ -16,6 +16,13 @@ import "./globals.css";
  */
 
 export const metadata: Metadata = {
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "48x48" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   title: {
     default: `${SITE_NAME} · 八字排盘、六爻起卦与塔罗牌阵`,
     template: `%s | ${SITE_NAME}`,
