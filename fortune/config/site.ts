@@ -9,7 +9,7 @@
  */
 
 /** 站点名称，全站唯一来源 */
-export const SITE_NAME = "blg必胜";
+export const SITE_NAME = "卜也";
 
 /**
  * 站点正式地址（含协议、不带末尾斜杠）。
