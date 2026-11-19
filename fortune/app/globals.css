@@ -242,6 +242,12 @@ body {
   opacity: 0.7;
 }
 
+/* 校验失败：颜色之外再加 1px 内阴影（非颜色线索，且不引起布局位移）。 */
+.field[aria-invalid="true"] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
 /* 签筒式 chip：上圆下平，像一支支签 */
 .chip {
   display: inline-flex;

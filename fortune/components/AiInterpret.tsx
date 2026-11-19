@@ -21,6 +21,7 @@ import { EXTRA_MAX, TOPICS } from "@/lib/ai/schema";
 import type { BaziData, LiuyaoData, TarotData, Topic } from "@/lib/ai/schema";
 import { useQuestion } from "@/components/QuestionContext";
 import { appendStripped } from "@/components/stream-text";
+import { SseAssembler } from "@/lib/sse-parser";
 
 export type AiInterpretType = "bazi" | "liuyao" | "tarot";
 
@@ -57,31 +58,6 @@ const PHASE_LABEL: Record<Phase, string> = {
   stopped: "已停止",
   error: "生成失败",
 };
-
-type ParsedEvent = { kind: "content"; text: string } | { kind: "done" };
-
-/** 解析一个 SSE 事件块；只认 `data:` 行，其余（心跳/注释）丢弃。 */
-function parseEvent(rawEvent: string): ParsedEvent | null {
-  for (const line of rawEvent.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed.startsWith("data:")) continue;
-    const payload = trimmed.slice("data:".length).trim();
-    if (!payload) continue;
-    if (payload === "[DONE]") return { kind: "done" };
-    try {
-      const json = JSON.parse(payload) as {
-        choices?: { delta?: { content?: unknown } }[];
-      };
-      const content = json.choices?.[0]?.delta?.content;
-      if (typeof content === "string" && content.length > 0) {
-        return { kind: "content", text: content };
-      }
-    } catch {
-      // 非 JSON 的 data 行直接丢弃
-    }
-  }
-  return null;
-}
 
 function isAbortError(err: unknown): boolean {
   return (err as { name?: unknown } | null | undefined)?.name === "AbortError";
@@ -223,7 +199,7 @@ function AiInterpretPanel({
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let buffer = "";
+      const assembler = new SseAssembler();
       let acc = "";
       let sawDone = false;
 
@@ -231,17 +207,7 @@ function AiInterpretPanel({
         const { value, done } = await reader.read();
         if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        // 归一化 CRLF：chunk 恰好切在 "\r\n" 中间时不丢事件分隔
-        buffer = buffer.replace(/\r\n/g, "\n");
-
-        let idx = buffer.indexOf("\n\n");
-        while (idx !== -1) {
-          const event = parseEvent(buffer.slice(0, idx));
-          buffer = buffer.slice(idx + 2);
-          idx = buffer.indexOf("\n\n");
-
-          if (!event) continue;
+        for (const event of assembler.push(decoder.decode(value, { stream: true }))) {
           if (event.kind === "done") {
             sawDone = true;
             break;

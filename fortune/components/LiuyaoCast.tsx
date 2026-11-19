@@ -230,9 +230,11 @@ export function LiuyaoCast() {
   const busy = loading || finished;
   const askLabel = topicActionLabel("liuyao", topic);
 
-  // 成卦后：等卦名浮现（300ms 延迟 + 520ms 动画）再滚到装卦区
+  // 成卦后：等卦名浮现（300ms 延迟 + 520ms 动画）再滚到装卦区。
+  // 桌面双栏布局下结果同屏可见，不滚动。
   useEffect(() => {
     if (!outcome) return;
+    if (window.matchMedia("(min-width: 1024px)").matches) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const timer = window.setTimeout(() => {
       resultRef.current?.scrollIntoView({
@@ -305,11 +307,13 @@ export function LiuyaoCast() {
         : "";
 
   return (
-    <div className="space-y-8">
-      <p role="status" aria-live="polite" className="sr-only">
+    <div className="space-y-8 lg:grid lg:grid-cols-[26rem_minmax(0,1fr)] lg:gap-10 lg:space-y-0">
+      <p role="status" aria-live="polite" className="sr-only lg:col-span-2">
         {statusText}
       </p>
 
+      {/* 左栏：问事 + 起卦操作（桌面 sticky） */}
+      <div className="space-y-8 lg:sticky lg:top-8 lg:self-start">
       <TopicPicker
         kind="liuyao"
         topic={topic}
@@ -445,7 +449,7 @@ export function LiuyaoCast() {
               ? "先选所问之事，再起卦（一事一占）。"
               : method === "coin"
                 ? finished
-                  ? "已成一卦，可重新起卦，或对照下方卦象与取辞。"
+                  ? "已成一卦，可重新起卦，或对照右侧卦象与取辞。"
                   : tossed === 0
                     ? "点击六次，每次三枚铜钱；第 1 次为初爻。"
                     : `已掷 ${tossed} / 6 次，下一掷为${YAO_LABELS[tossed]}。`
@@ -455,8 +459,10 @@ export function LiuyaoCast() {
           </p>
         </div>
       </section>
+      </div>
 
-      <div aria-busy={loading}>
+      {/* 右栏：卦象与取辞（桌面）／起卦区下方（移动） */}
+      <div aria-busy={loading} className="lg:border-l lg:border-rule lg:pl-10">
         {loading ? (
           <div className="rounded-[2px] border border-dashed border-rule px-5 py-8 text-center">
             <p className="font-serif text-sm tracking-[0.2em] text-fg-soft">起卦中…</p>
@@ -479,11 +485,13 @@ export function LiuyaoCast() {
             </QuestionProvider>
           </div>
         ) : (
-          <p className="border-t border-rule pt-5 text-[11px] leading-5 text-fg-faint">
-            {method === "coin"
-              ? "掷满六次后，这里会出现本卦与变卦的卦象、装卦标注与取辞。"
-              : "点「以此刻起卦」后，这里会出现本卦与变卦的卦象、取数过程与取辞。"}
-          </p>
+          <div className="flex min-h-[12rem] items-center border-t border-rule pt-5 lg:min-h-[24rem] lg:border-t-0 lg:pt-0">
+            <p className="text-[11px] leading-5 text-fg-faint">
+              {method === "coin"
+                ? "掷满六次后，这里会出现本卦与变卦的卦象、装卦标注与取辞。"
+                : "点「以此刻起卦」后，这里会出现本卦与变卦的卦象、取数过程与取辞。"}
+            </p>
+          </div>
         )}
       </div>
     </div>

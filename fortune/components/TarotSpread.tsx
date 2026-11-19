@@ -300,11 +300,13 @@ export function TarotSpread() {
               : "";
 
   return (
-    <div ref={shareRef} className="space-y-8">
-      <p role="status" aria-live="polite" className="sr-only">
+    <div ref={shareRef} className="space-y-8 lg:grid lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-10 lg:space-y-0">
+      <p role="status" aria-live="polite" className="sr-only lg:col-span-2">
         {statusText}
       </p>
 
+      {/* 左栏：问事 + 牌阵选择 + 洗牌抽牌操作（桌面 sticky） */}
+      <div className="space-y-8 lg:sticky lg:top-8 lg:self-start">
       <TopicPicker
         kind="tarot"
         topic={topic}
@@ -387,7 +389,28 @@ export function TarotSpread() {
           </span>
         </div>
 
-        <div className="mt-6 flex min-h-[11rem] items-center justify-center">
+        {/* 操作区（洗牌/抽牌按钮 + 提示）不进入分享图；牌面在右栏 */}
+        <div data-share-hide className="mt-6 flex flex-col items-center gap-3">
+          <button
+            type="button"
+            onClick={phase === "shuffled" ? handleDraw : handleShuffle}
+            disabled={isBusy}
+            className="tap h-11 w-full max-w-[16rem] rounded-[2px] bg-cta px-8 text-sm tracking-[0.25em] text-on-cta hover:bg-cta-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {actionLabel}
+          </button>
+          <p className="text-center text-[11px] leading-5 text-fg-muted">{actionHint}</p>
+        </div>
+      </section>
+      </div>
+
+      {/* 右栏：牌面 + 牌义解读（桌面）／左栏下方（移动） */}
+      <div className="lg:border-l lg:border-gold/40 lg:pl-10">
+      <section aria-labelledby="cards-heading" aria-busy={isBusy} className="space-y-4">
+        <h2 id="cards-heading" className="sr-only">
+          牌面
+        </h2>
+        <div className="flex min-h-[11rem] items-center justify-center rounded-[2px] border border-rule bg-surface-2 p-5 sm:p-7">
           {drawn.length === 0 ? (
             <DeckStack shuffling={phase === "shuffling"} />
           ) : (
@@ -407,19 +430,6 @@ export function TarotSpread() {
               })}
             </ol>
           )}
-        </div>
-
-        {/* 操作区（洗牌/抽牌按钮 + 提示）不进入分享图；牌面在上面的 ol 里 */}
-        <div data-share-hide className="mt-6 flex flex-col items-center gap-3">
-          <button
-            type="button"
-            onClick={phase === "shuffled" ? handleDraw : handleShuffle}
-            disabled={isBusy}
-            className="tap h-11 w-full max-w-[16rem] rounded-[2px] bg-cta px-8 text-sm tracking-[0.25em] text-on-cta hover:bg-cta-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {actionLabel}
-          </button>
-          <p className="text-center text-[11px] leading-5 text-fg-muted">{actionHint}</p>
         </div>
       </section>
 
@@ -474,6 +484,7 @@ export function TarotSpread() {
       <QuestionProvider value={activeQuestion}>
         <AiInterpret type="tarot" buildData={buildAiData} />
       </QuestionProvider>
+      </div>
 
       {phase === "done" ? (
         <ShareButton targetRef={shareRef} fileName="tarot" label="塔罗抽牌" theme="dark" />

@@ -446,8 +446,11 @@ export function BaziResult(props: BaziResultProps) {
   return (
     <div className="space-y-10 divide-y divide-rule-ink [&>section]:pt-8 [&>section:first-child]:pt-0">
       <SiZhuTable {...props} />
-      <WuXingChart result={props.result} />
-      <DaYunAxis result={props.result} birth={props.birth} />
+      {/* 桌面宽屏：五行分布与大运并排（两者都是横向图示），移动端保持竖排 */}
+      <div className="grid gap-10 divide-y divide-rule-ink lg:grid-cols-2 lg:gap-x-10 lg:divide-x lg:divide-y-0 [&>section]:pt-8 lg:[&>section]:pt-8 lg:[&>section:first-child]:pr-10 lg:[&>section:last-child]:pl-10 [&>section:first-child]:pt-0">
+        <WuXingChart result={props.result} />
+        <DaYunAxis result={props.result} birth={props.birth} />
+      </div>
       <Interpretation result={props.result} />
       <AiInterpret type="bazi" buildData={() => buildAiData(props.result)} />
       <Notes note={props.result.note} />

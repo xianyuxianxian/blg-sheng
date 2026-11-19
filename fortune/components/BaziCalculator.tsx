@@ -12,6 +12,9 @@ import type { PaiPanResult } from "@/lib/bazi/types";
 
 type Gender = "m" | "f";
 
+/** 字段级校验错误：指明是哪一栏，好把焦点与 aria-describedby 接上去。 */
+type FieldError = { field: "year" | "minute"; message: string };
+
 type Outcome = {
   result: PaiPanResult;
   birth: BirthSummary;
@@ -60,10 +63,14 @@ export function BaziCalculator() {
   const [topic, setTopic] = useState<Topic | null>(null);
   const [extra, setExtra] = useState("");
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [fieldError, setFieldError] = useState<FieldError | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   /** 分享图截图目标：结果区内容，不含外框与按钮。 */
   const resultRef = useRef<HTMLDivElement | null>(null);
+  /** 表单带 noValidate，原生不会把焦点送回出错字段，只能自己来。 */
+  const yearRef = useRef<HTMLInputElement | null>(null);
+  const minuteRef = useRef<HTMLInputElement | null>(null);
 
   const year = Number(yearText.trim());
   const effectiveDay = Math.min(day, daysInMonth(year, month));
@@ -74,17 +81,22 @@ export function BaziCalculator() {
 
     if (!Number.isInteger(year) || year < 1900 || year > 2100) {
       setOutcome(null);
-      setError("出生年需为 1900–2100 之间的整数（公历）。");
+      setFormError(null);
+      setFieldError({ field: "year", message: "出生年需为 1900–2100 之间的整数（公历）。" });
+      yearRef.current?.focus();
       return;
     }
     const minute = minuteText.trim() === "" ? DEFAULT_MINUTE : Number(minuteText);
     if (!Number.isInteger(minute) || minute < 0 || minute > 59) {
       setOutcome(null);
-      setError("分钟需为 0–59 的整数；留空按 30 分计。");
+      setFormError(null);
+      setFieldError({ field: "minute", message: "分钟需为 0–59 的整数；留空按 30 分计。" });
+      minuteRef.current?.focus();
       return;
     }
 
-    setError(null);
+    setFieldError(null);
+    setFormError(null);
     setLoading(true);
     try {
       // lunar-typescript 体积较大：只在提交时动态引入，避免进入首屏 bundle。
@@ -106,44 +118,60 @@ export function BaziCalculator() {
       });
     } catch (err) {
       setOutcome(null);
-      setError(err instanceof Error ? err.message : "排盘失败，请检查输入的日期与时刻。");
+      setFormError(err instanceof Error ? err.message : "排盘失败，请检查输入的日期与时刻。");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="space-y-6">
-      <TopicPicker
-        kind="bazi"
-        topic={topic}
-        onTopicChange={setTopic}
-        extra={extra}
-        onExtraChange={setExtra}
-        disabled={loading}
-        className="rounded-[2px] border border-rule bg-surface-2 p-5 sm:p-7"
-      />
+    <div className="space-y-6 lg:grid lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-10 lg:space-y-0">
+      {/* 左栏：问事 + 表单（桌面）／顶部（移动） */}
+      <div className="space-y-6 lg:sticky lg:top-8 lg:self-start">
+        <TopicPicker
+          kind="bazi"
+          topic={topic}
+          onTopicChange={setTopic}
+          extra={extra}
+          onExtraChange={setExtra}
+          disabled={loading}
+          className="rounded-[2px] border border-rule bg-surface-2 p-5 sm:p-7"
+        />
 
-      <form
-        onSubmit={handleSubmit}
-        noValidate
-        className="rounded-[2px] border border-rule bg-surface-2 p-5 sm:p-7"
-      >
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          className="rounded-[2px] border border-rule bg-surface-2 p-5 sm:p-7"
+        >
         <div className="grid grid-cols-3 gap-3">
           <Field label="出生年" htmlFor="bazi-year">
             <input
+              ref={yearRef}
               id="bazi-year"
               name="year"
               type="number"
               inputMode="numeric"
               min={1900}
               max={2100}
-              placeholder="公历 1990"
+              placeholder="1990"
               value={yearText}
               onChange={(e) => setYearText(e.currentTarget.value)}
               className="field"
               autoComplete="bday-year"
+              aria-invalid={fieldError?.field === "year"}
+              aria-describedby={
+                fieldError?.field === "year" ? "bazi-year-hint bazi-year-error" : "bazi-year-hint"
+              }
             />
+            {/* 格式说明必须常驻：placeholder 一输入就消失，不能当提示用。 */}
+            <p id="bazi-year-hint" className="mt-1 text-[11px] leading-4 text-fg-faint">
+              公历年份，1900–2100
+            </p>
+            {fieldError?.field === "year" ? (
+              <p id="bazi-year-error" className="mt-1 text-[11px] leading-4 text-accent">
+                {fieldError.message}
+              </p>
+            ) : null}
           </Field>
 
           <Field label="月" htmlFor="bazi-month">
@@ -198,16 +226,24 @@ export function BaziCalculator() {
 
           <Field label="分（默认 30）" htmlFor="bazi-minute">
             <input
+              ref={minuteRef}
               id="bazi-minute"
               name="minute"
-              type="number"
+              type="text"
               inputMode="numeric"
-              min={0}
-              max={59}
+              pattern="[0-9]*"
+              autoComplete="off"
               value={minuteText}
               onChange={(e) => setMinuteText(e.currentTarget.value)}
               className="field"
+              aria-invalid={fieldError?.field === "minute"}
+              aria-describedby={fieldError?.field === "minute" ? "bazi-minute-error" : undefined}
             />
+            {fieldError?.field === "minute" ? (
+              <p id="bazi-minute-error" className="mt-1 text-[11px] leading-4 text-accent">
+                {fieldError.message}
+              </p>
+            ) : null}
           </Field>
 
           <fieldset className="col-span-2 sm:col-span-1">
@@ -244,11 +280,10 @@ export function BaziCalculator() {
           </fieldset>
         </div>
 
-        {error ? (
-          <p role="alert" className="mt-4 text-xs leading-5 text-accent">
-            {error}
-          </p>
-        ) : null}
+        {/* 字段错误已由 aria-describedby + 焦点移动承载，这里只播报非字段错误。 */}
+        <div aria-live="polite" className="sr-only">
+          {formError ?? ""}
+        </div>
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
@@ -260,9 +295,11 @@ export function BaziCalculator() {
           </button>
           <p className="text-[11px] leading-5 text-fg-faint">生辰只在你的浏览器中计算，不会上传。</p>
         </div>
-      </form>
+        </form>
+      </div>
 
-      <div aria-live="polite" aria-busy={loading}>
+      {/* 右栏：结果区（桌面）／表单下方（移动）。空态给一条引导。 */}
+      <div aria-live="polite" aria-busy={loading} className="lg:border-l lg:border-rule lg:pl-10">
         {loading ? (
           <div className="rounded-[2px] border border-dashed border-rule px-5 py-8 text-center">
             <p className="font-serif text-sm tracking-[0.2em] text-fg-soft">推演中…</p>
@@ -288,9 +325,11 @@ export function BaziCalculator() {
             />
           </div>
         ) : (
-          <p className="border-t border-rule pt-5 text-[11px] leading-5 text-fg-faint">
-            填好生辰后点「{askLabel ?? "排盘"}」，四柱、五行、大运与取象会出现在这里。
-          </p>
+          <div className="flex min-h-[12rem] items-center border-t border-rule pt-5 lg:min-h-[24rem] lg:border-t-0 lg:pt-0">
+            <p className="text-[11px] leading-5 text-fg-faint">
+              填好生辰后点「{askLabel ?? "排盘"}」，四柱、五行、大运与取象会出现在这里。
+            </p>
+          </div>
         )}
       </div>
     </div>

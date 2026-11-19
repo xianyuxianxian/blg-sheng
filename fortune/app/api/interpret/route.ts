@@ -13,6 +13,7 @@
 
 import { buildPrompt } from "../../../lib/ai/prompt";
 import { interpretRequestSchema } from "../../../lib/ai/schema";
+import { SseAssembler, type SseEvent } from "../../../lib/sse-parser";
 
 export const runtime = "nodejs";
 
@@ -131,37 +132,6 @@ function errorJson(status: number, error: string, message: string): Response {
 
 const encoder = new TextEncoder();
 
-type UpstreamEvent = { kind: "content"; text: string } | { kind: "done" };
-
-/**
- * 解析一个上游 SSE 事件块，只认 `data:` 行。
- * 返回 content 事件、[DONE]、或 null（心跳/注释/仅有 reasoning_content）。
- */
-function parseEvent(rawEvent: string): UpstreamEvent | null {
-  for (const line of rawEvent.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed.startsWith("data:")) continue;
-
-    const payload = trimmed.slice("data:".length).trim();
-    if (!payload) continue;
-    if (payload === "[DONE]") return { kind: "done" };
-
-    try {
-      const json = JSON.parse(payload) as {
-        choices?: { delta?: { content?: unknown } }[];
-      };
-      const content = json.choices?.[0]?.delta?.content;
-      // reasoning_content 不读即不转发
-      if (typeof content === "string" && content.length > 0) {
-        return { kind: "content", text: content };
-      }
-    } catch {
-      // 非 JSON 的 data 行（上游心跳等）直接丢弃
-    }
-  }
-  return null;
-}
-
 /**
  * 上游 SSE → 客户端 SSE 的转换器。
  *
@@ -169,14 +139,16 @@ function parseEvent(rawEvent: string): UpstreamEvent | null {
  * 直接管道无法剔除 `reasoning_content`；逐事件解析还能在 chunk 边界被任意
  * 切断时靠 buffer 重组完整事件。输出为上游同构的
  * `data: {"choices":[{"delta":{"content":"..."}}]}`，并以 `data: [DONE]` 收尾。
+ *
+ * 事件解析与 chunk 重组逻辑在 lib/sse-parser.ts（与前端共用）。
  */
 export function createSseForwarder(): TransformStream<Uint8Array, Uint8Array> {
   const decoder = new TextDecoder();
-  let buffer = "";
+  const assembler = new SseAssembler();
   let sawDone = false;
 
   function forward(
-    event: UpstreamEvent,
+    event: SseEvent,
     controller: TransformStreamDefaultController<Uint8Array>,
   ): void {
     if (event.kind === "content") {
@@ -193,30 +165,14 @@ export function createSseForwarder(): TransformStream<Uint8Array, Uint8Array> {
     }
   }
 
-  function drain(controller: TransformStreamDefaultController<Uint8Array>): void {
-    let idx = buffer.indexOf("\n\n");
-    while (idx !== -1) {
-      const rawEvent = buffer.slice(0, idx);
-      buffer = buffer.slice(idx + 2);
-      const event = parseEvent(rawEvent);
-      if (event) forward(event, controller);
-      idx = buffer.indexOf("\n\n");
-    }
-  }
-
   return new TransformStream<Uint8Array, Uint8Array>({
     transform(chunk, controller) {
-      buffer += decoder.decode(chunk, { stream: true });
-      // 在累积缓冲上归一化 CRLF，避免 chunk 恰好切在 "\r\n" 中间时漏掉空行分隔
-      buffer = buffer.replace(/\r\n/g, "\n");
-      drain(controller);
+      for (const event of assembler.push(decoder.decode(chunk, { stream: true }))) {
+        forward(event, controller);
+      }
     },
     flush(controller) {
-      buffer += decoder.decode();
-      buffer = buffer.replace(/\r\n/g, "\n");
-      const tail = parseEvent(buffer);
-      if (tail) forward(tail, controller);
-      buffer = "";
+      assembler.flush().forEach((event) => forward(event, controller));
       // 上游没发 [DONE] 也要给客户端一个明确结束标记
       forward({ kind: "done" }, controller);
     },

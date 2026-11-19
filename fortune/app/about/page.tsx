@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { PageShell } from "@/components/PageShell";
 import { SITE_NAME } from "@/config/site";
 import {
   DISCLAIMER_POINTS,
@@ -43,9 +44,7 @@ function PointList({ points }: { points: readonly CopyPoint[] }) {
     <>
       {points.map((point) => (
         <div key={point.title}>
-          <p className="text-[13px] font-medium tracking-[0.04em] text-fg">
-            {point.title}
-          </p>
+          <p className="text-[13px] font-medium tracking-[0.04em] text-fg">{point.title}</p>
           <p className="mt-1 text-[13px] leading-7 text-fg-soft">{point.body}</p>
         </div>
       ))}
@@ -53,84 +52,64 @@ function PointList({ points }: { points: readonly CopyPoint[] }) {
   );
 }
 
+/** 关于页自定义页脚：只有「回到首页」链接（免责内容已在正文分节里）。 */
+function AboutFooter() {
+  return (
+    <footer className="mt-12 border-t border-rule pt-5 text-[11px] leading-6 text-fg-muted">
+      <p>
+        <Link
+          href="/"
+          className="tap underline decoration-rule underline-offset-4 hover:text-accent"
+        >
+          回到首页
+        </Link>
+      </p>
+      <p className="mt-3 tracking-[0.2em] text-fg-faint">{SITE_NAME}</p>
+    </footer>
+  );
+}
+
 export default function AboutPage() {
   return (
-    <div className="min-h-screen border-t-2 border-accent bg-surface text-fg">
-      <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col px-5 pb-10 pt-6 sm:px-8 sm:pt-8">
-        <header className="flex items-center justify-between border-b border-rule pb-4">
-          <Link
-            href="/"
-            className="tap flex items-center gap-2.5 text-sm tracking-[0.2em] text-fg-soft hover:text-accent"
-          >
-            <span
-              aria-hidden
-              className="grid h-6 w-6 place-items-center bg-accent font-serif text-[13px] leading-none text-on-accent"
-            >
-              命
-            </span>
-            <span className="font-serif">{SITE_NAME}</span>
-          </Link>
-          <Link
-            href="/"
-            className="tap text-[11px] tracking-[0.15em] text-fg-muted hover:text-accent"
-          >
-            返回首页
-          </Link>
-        </header>
-
-        <main className="flex-1">
-          <section className="py-10 sm:py-12">
-            <p className="text-[11px] tracking-[0.35em] text-fg-muted">关于 · 隐私 · 口径</p>
-            <h1 className="mt-3 font-serif text-3xl tracking-[0.12em] text-fg sm:text-4xl">
-              关于本站
-            </h1>
-            {PRODUCT_INTRO.map((paragraph) => (
-              <p key={paragraph} className="mt-5 max-w-lg text-sm leading-7 text-fg-soft">
-                {paragraph}
-              </p>
-            ))}
-          </section>
-
-          <Section index="一" title="隐私说明">
-            <PointList points={PRIVACY_POINTS} />
-            <p className="rounded-[2px] border-l-2 border-accent bg-surface-3 px-3 py-2 text-[13px] leading-7 text-fg-soft">
-              排盘结果（不含你的生辰）会在你点击 AI 解读时发送给模型服务，用于生成解读。
-            </p>
-          </Section>
-
-          <Section index="二" title="排盘口径">
-            <p className="text-[13px] leading-7 text-fg-soft">
-              下面每一条都对应页面上可见的推导过程。口径与你的师承不同时，以你采用的规则为准。
-            </p>
-            <dl className="flex flex-col gap-4">
-              {METHOD_NOTES.map((note) => (
-                <div key={note.title}>
-                  <dt className="text-[13px] font-medium tracking-[0.04em] text-fg-soft">
-                    {note.title}
-                  </dt>
-                  <dd className="mt-1 text-[13px] leading-7 text-fg-soft">{note.body}</dd>
-                </div>
-              ))}
-            </dl>
-          </Section>
-
-          <Section index="三" title="免责声明">
-            <PointList points={DISCLAIMER_POINTS} />
-          </Section>
-        </main>
-
-        <footer className="mt-12 border-t border-rule pt-5 text-[11px] leading-6 text-fg-muted">
-          <p>
-            <Link
-              href="/"
-              className="tap underline decoration-rule underline-offset-4 hover:text-accent"
-            >
-              回到首页
-            </Link>
+    <PageShell headerHref="/" headerLabel="返回首页" footer={<AboutFooter />}>
+      <section className="py-10 sm:py-12">
+        <p className="text-[11px] tracking-[0.35em] text-fg-muted">关于 · 隐私 · 口径</p>
+        <h1 className="mt-3 font-serif text-3xl tracking-[0.12em] text-fg sm:text-4xl">
+          关于本站
+        </h1>
+        {PRODUCT_INTRO.map((paragraph) => (
+          <p key={paragraph} className="mt-5 max-w-lg text-sm leading-7 text-fg-soft">
+            {paragraph}
           </p>
-          <p className="mt-3 tracking-[0.2em] text-fg-faint">{SITE_NAME}</p>
-        </footer>
-      </div>
-    </div>
+        ))}
+      </section>
+
+      <Section index="一" title="隐私说明">
+        <PointList points={PRIVACY_POINTS} />
+        <p className="rounded-[2px] border-l-2 border-accent bg-surface-3 px-3 py-2 text-[13px] leading-7 text-fg-soft">
+          排盘结果（不含你的生辰）会在你点击 AI 解读时发送给模型服务，用于生成解读。
+        </p>
+      </Section>
+
+      <Section index="二" title="排盘口径">
+        <p className="text-[13px] leading-7 text-fg-soft">
+          下面每一条都对应页面上可见的推导过程。口径与你的师承不同时，以你采用的规则为准。
+        </p>
+        <dl className="flex flex-col gap-4">
+          {METHOD_NOTES.map((note) => (
+            <div key={note.title}>
+              <dt className="text-[13px] font-medium tracking-[0.04em] text-fg-soft">
+                {note.title}
+              </dt>
+              <dd className="mt-1 text-[13px] leading-7 text-fg-soft">{note.body}</dd>
+            </div>
+          ))}
+        </dl>
+      </Section>
+
+      <Section index="三" title="免责声明">
+        <PointList points={DISCLAIMER_POINTS} />
+      </Section>
+    </PageShell>
   );
 }
