@@ -20,8 +20,10 @@ if (Test-App) {
     Add-Content -Path "$env:TEMP\buye-trace.log" -Value "server already up, opening browser"
 } else {
     Add-Content -Path "$env:TEMP\buye-trace.log" -Value "server down, spawning via WMI"
+    # User 级杂牌 ZHIPU_API_KEY 会被子进程继承并遮蔽 .env.local 的讯飞 key
+    # （Next.js 的 .env.local 不覆盖已存在的环境变量），必须在 cmd 内部清掉。
     Remove-Item Env:ZHIPU_API_KEY -ErrorAction SilentlyContinue
-    $inner = "cd /d ""$fortuneDir"" && node ""node_modules\next\dist\bin\next"" dev --port 3210"
+    $inner = "set ZHIPU_API_KEY=&& cd /d ""$fortuneDir"" && node ""node_modules\next\dist\bin\next"" dev --port 3210"
     $wmi = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{
         CommandLine = "cmd /c $inner"
         CurrentDirectory = $fortuneDir

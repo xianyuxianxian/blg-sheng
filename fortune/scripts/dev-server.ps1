@@ -1,4 +1,4 @@
-$ErrorActionPreference = "SilentlyContinue"
+﻿$ErrorActionPreference = "SilentlyContinue"
 $appUrl = "http://localhost:3210"
 function Test-App {
     try {
@@ -10,9 +10,11 @@ function Test-App {
 if (Test-App) {
     Write-Output "server already up"
 } else {
+    # User 级杂牌 ZHIPU_API_KEY 会被子进程继承并遮蔽 .env.local 的讯飞 key
+    # （Next.js 的 .env.local 不覆盖已存在的环境变量），必须在 spawn 的 cmd 内部清掉。
     Remove-Item Env:ZHIPU_API_KEY -ErrorAction SilentlyContinue
     $fortuneDir = Split-Path -Parent $PSScriptRoot
-    $inner = "cd /d ""$fortuneDir"" && node ""node_modules\next\dist\bin\next"" dev --port 3210"
+    $inner = "set ZHIPU_API_KEY=&& cd /d ""$fortuneDir"" && node ""node_modules\next\dist\bin\next"" dev --port 3210"
     Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{
         CommandLine = "cmd /c $inner"
         CurrentDirectory = $fortuneDir
